@@ -1,6 +1,0 @@
-{
-  "name": "AeroSport",
-  "description": "An independent local shop for sports gear, apparel, and premium nutritional fit-food with local map tracking, cart support, and AI customer chat.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
