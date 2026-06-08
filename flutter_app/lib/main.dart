@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'api_service.dart';
+
 void main() {
   runApp(const SportZoneApp());
 }
@@ -19,8 +21,9 @@ class SportZoneApp extends StatelessWidget {
         title: 'SportZone',
         debugShowCheckedModeBanner: false,
         theme: SportZoneTheme.lightTheme,
-        initialRoute: '/login',
+        initialRoute: '/splash',
         routes: {
+          '/splash': (_) => const SplashScreen(),
           '/login': (_) => const LoginScreen(),
           '/register': (_) => const RegisterScreen(),
           '/main': (_) => const MainScreen(),
@@ -89,8 +92,19 @@ class SportZoneTheme {
 class SportZoneState extends ChangeNotifier {
   User? currentUser;
   String selectedCategory = 'Tất cả';
+  String? selectedCategoryId;
+  String selectedBrand = 'Tất cả';
+  String? selectedBrandId;
   bool isBotTyping = false;
   int selectedTabIndex = 0;
+
+  // API-loaded data
+  List<Product> apiProducts = [];
+  List<Category> apiCategories = [];
+  List<Brand> apiBrands = [];
+  bool isLoadingProducts = false;
+  bool isLoadingAuth = false;
+  String? authError;
 
   final List<CartItem> cartItems = [];
   final List<NotificationItem> notifications = [
@@ -138,9 +152,188 @@ class SportZoneState extends ChangeNotifier {
 
   int _nextCartId = 1;
 
-  void selectCategory(String value) {
-    selectedCategory = value;
+  // ─── Auth Methods (API) ───
+
+  /// Try auto-login using saved token
+  Future<bool> tryAutoLogin() async {
+    final token = await ApiService.getToken();
+    if (token == null) return false;
+
+    final result = await ApiService.getMe();
+    if (result.isSuccess && result.data != null) {
+      currentUser = User.fromJson(result.data as Map<String, dynamic>);
+      notifyListeners();
+      return true;
+    } else {
+      await ApiService.clearToken();
+      return false;
+    }
+  }
+
+  /// Login via API
+  Future<String?> loginAsync(String email, String password) async {
+    isLoadingAuth = true;
+    authError = null;
     notifyListeners();
+
+    final result = await ApiService.login(email: email, password: password);
+
+    isLoadingAuth = false;
+
+    if (result.isSuccess) {
+      final data = result.data as Map<String, dynamic>;
+      if (data['user'] != null) {
+        currentUser = User.fromJson(data['user'] as Map<String, dynamic>);
+      }
+      notifyListeners();
+      return null; // no error
+    } else {
+      authError = result.errorMessage;
+      notifyListeners();
+      return result.errorMessage;
+    }
+  }
+
+  /// Register via API
+  Future<String?> registerAsync({
+    required String fullName,
+    required String email,
+    required String password,
+    String? phone,
+  }) async {
+    isLoadingAuth = true;
+    authError = null;
+    notifyListeners();
+
+    final result = await ApiService.register(
+      fullName: fullName,
+      email: email,
+      password: password,
+      phone: phone,
+    );
+
+    isLoadingAuth = false;
+
+    if (result.isSuccess) {
+      // Auto login after register
+      final loginResult = await ApiService.login(
+        email: email,
+        password: password,
+      );
+      if (loginResult.isSuccess) {
+        final data = loginResult.data as Map<String, dynamic>;
+        if (data['user'] != null) {
+          currentUser = User.fromJson(data['user'] as Map<String, dynamic>);
+        }
+      }
+      notifyListeners();
+      return null;
+    } else {
+      authError = result.errorMessage;
+      notifyListeners();
+      return result.errorMessage;
+    }
+  }
+
+  /// Logout via API
+  Future<void> logoutAsync() async {
+    await ApiService.logout();
+    currentUser = null;
+    apiProducts.clear();
+    selectedTabIndex = 0;
+    notifyListeners();
+  }
+
+  // Keep legacy methods for backward compat (used nowhere now, but safe)
+  bool login(String username, String password) {
+    if (username.isNotEmpty && password.length >= 4) {
+      currentUser = User(
+        uid: '',
+        name: username.split('@').first,
+        email: username,
+        phone: '0900000000',
+      );
+      notifyListeners();
+      return true;
+    }
+    return false;
+  }
+
+  bool register(String name, String email, String phone, String password) {
+    if (name.isNotEmpty &&
+        email.isNotEmpty &&
+        phone.isNotEmpty &&
+        password.length >= 4) {
+      currentUser = User(uid: '', name: name, email: email, phone: phone);
+      notifyListeners();
+      return true;
+    }
+    return false;
+  }
+
+  void logout() {
+    currentUser = null;
+    notifyListeners();
+  }
+
+  // ─── Products / Categories / Brands (API) ───
+
+  Future<void> fetchProducts({String? categoryId, String? brandId}) async {
+    isLoadingProducts = true;
+    notifyListeners();
+
+    final result = await ApiService.getProducts(
+      limit: 50,
+      categoryId: categoryId,
+      brandId: brandId,
+    );
+
+    if (result.isSuccess && result.data != null) {
+      final data = result.data as Map<String, dynamic>;
+      final items = data['items'] as List<dynamic>? ?? [];
+      apiProducts = items
+          .map((json) => Product.fromJson(json as Map<String, dynamic>))
+          .toList();
+    }
+
+    isLoadingProducts = false;
+    notifyListeners();
+  }
+
+  Future<void> fetchCategories() async {
+    final result = await ApiService.getCategories();
+    if (result.isSuccess && result.data != null) {
+      final list = result.data as List<dynamic>;
+      apiCategories = list
+          .map((json) => Category.fromJson(json as Map<String, dynamic>))
+          .toList();
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchBrands() async {
+    final result = await ApiService.getBrands();
+    if (result.isSuccess && result.data != null) {
+      final list = result.data as List<dynamic>;
+      apiBrands = list
+          .map((json) => Brand.fromJson(json as Map<String, dynamic>))
+          .toList();
+      notifyListeners();
+    }
+  }
+
+  // ─── Category / Cart / Chat / Notifications ───
+
+  void selectCategory(String value, {String? categoryId}) {
+    selectedCategory = value;
+    selectedCategoryId = categoryId;
+    fetchProducts(categoryId: categoryId, brandId: selectedBrandId);
+  }
+
+  void selectBrand(String value, {String? brandId}) {
+    selectedBrand = value;
+    selectedBrandId = brandId;
+    fetchProducts(categoryId: selectedCategoryId, brandId: brandId);
   }
 
   void addToCart(
@@ -255,36 +448,6 @@ class SportZoneState extends ChangeNotifier {
     );
     notifyListeners();
   }
-
-  bool login(String username, String password) {
-    if (username.isNotEmpty && password.length >= 4) {
-      currentUser = User(
-        name: username.split('@').first,
-        email: username,
-        phone: '0900000000',
-      );
-      notifyListeners();
-      return true;
-    }
-    return false;
-  }
-
-  bool register(String name, String email, String phone, String password) {
-    if (name.isNotEmpty &&
-        email.isNotEmpty &&
-        phone.isNotEmpty &&
-        password.length >= 4) {
-      currentUser = User(name: name, email: email, phone: phone);
-      notifyListeners();
-      return true;
-    }
-    return false;
-  }
-
-  void logout() {
-    currentUser = null;
-    notifyListeners();
-  }
 }
 
 class Product {
@@ -297,6 +460,12 @@ class Product {
   final String imageUrl;
   final String category;
   final String description;
+  final String? brandId;
+  final String? categoryId;
+  final List<String> images;
+  final String? material;
+  final String? gender;
+  final int totalStock;
 
   Product({
     required this.id,
@@ -308,7 +477,121 @@ class Product {
     required this.imageUrl,
     required this.category,
     required this.description,
+    this.brandId,
+    this.categoryId,
+    this.images = const [],
+    this.material,
+    this.gender,
+    this.totalStock = 0,
   });
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    final price = (json['price'] is String)
+        ? int.tryParse(json['price']) ?? 0
+        : (json['price'] as num?)?.toInt() ?? 0;
+    final salePrice = json['salePrice'] != null
+        ? (json['salePrice'] is String
+              ? int.tryParse(json['salePrice'])
+              : (json['salePrice'] as num?)?.toInt())
+        : null;
+
+    // Determine display price and original price
+    final displayPrice = salePrice ?? price;
+    final origPrice = salePrice != null ? price : null;
+
+    // Calculate discount badge
+    String? discountBadge;
+    if (origPrice != null && origPrice > displayPrice) {
+      final pct = ((origPrice - displayPrice) / origPrice * 100).round();
+      discountBadge = '-$pct%';
+    }
+
+    // Get brand name
+    final brandData = json['brand'];
+    final brandName = brandData is Map
+        ? (brandData['name']?.toString() ?? '')
+        : '';
+
+    // Get category name
+    final catData = json['category'];
+    final catName = catData is Map ? (catData['name']?.toString() ?? '') : '';
+
+    // Get images
+    final imagesList = <String>[];
+    if (json['images'] is List) {
+      for (var img in json['images']) {
+        imagesList.add(img.toString());
+      }
+    }
+
+    final firstImage = imagesList.isNotEmpty
+        ? imagesList.first
+        : 'https://via.placeholder.com/300x300?text=No+Image';
+
+    return Product(
+      id: json['productId']?.toString() ?? json['id']?.toString() ?? '',
+      brand: brandName,
+      name: json['name']?.toString() ?? '',
+      price: displayPrice,
+      originalPrice: origPrice,
+      discount: discountBadge,
+      imageUrl: firstImage,
+      category: catName,
+      description: json['description']?.toString() ?? '',
+      brandId: json['brandId']?.toString(),
+      categoryId: json['categoryId']?.toString(),
+      images: imagesList,
+      material: json['material']?.toString(),
+      gender: json['gender']?.toString(),
+      totalStock: (json['totalStock'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class Category {
+  final String categoryId;
+  final String name;
+  final String slug;
+  final int displayOrder;
+
+  Category({
+    required this.categoryId,
+    required this.name,
+    required this.slug,
+    this.displayOrder = 0,
+  });
+
+  factory Category.fromJson(Map<String, dynamic> json) {
+    return Category(
+      categoryId: json['categoryId']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      slug: json['slug']?.toString() ?? '',
+      displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class Brand {
+  final String brandId;
+  final String name;
+  final String? logoUrl;
+  final String? country;
+
+  Brand({
+    required this.brandId,
+    required this.name,
+    this.logoUrl,
+    this.country,
+  });
+
+  factory Brand.fromJson(Map<String, dynamic> json) {
+    return Brand(
+      brandId: json['brandId']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      logoUrl: json['logoUrl']?.toString(),
+      country: json['country']?.toString(),
+    );
+  }
 }
 
 class CartItem {
@@ -472,11 +755,33 @@ class GeminiClient {
 }
 
 class User {
+  final String uid;
   final String name;
   final String email;
   final String phone;
+  final String role;
+  final String? avatarUrl;
 
-  User({required this.name, required this.email, required this.phone});
+  User({
+    required this.uid,
+    required this.name,
+    required this.email,
+    required this.phone,
+    this.role = 'customer',
+    this.avatarUrl,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      uid: json['uid']?.toString() ?? '',
+      name: json['full_name']?.toString() ?? json['fullName']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      role: json['role']?.toString() ?? 'customer',
+      avatarUrl:
+          json['avatar_url']?.toString() ?? json['avatarUrl']?.toString(),
+    );
+  }
 }
 
 final productList = <Product>[
@@ -575,6 +880,120 @@ final productList = <Product>[
   ),
 ];
 
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(
+      begin: 0.85,
+      end: 1.15,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    _initializeApp();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initializeApp() async {
+    final state = context.read<SportZoneState>();
+
+    // Attempt auto login
+    final isLoggedIn = await state.tryAutoLogin().timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => false,
+    );
+
+    // Warm up home data without blocking the first navigation.
+    state.fetchCategories();
+    state.fetchBrands();
+    state.fetchProducts();
+
+    if (!mounted) return;
+
+    if (isLoggedIn) {
+      Navigator.pushReplacementNamed(context, '/main');
+    } else {
+      Navigator.pushReplacementNamed(context, '/login');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ScaleTransition(
+              scale: _animation,
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: SportZoneTheme.electricLime.withValues(alpha: 0.1),
+                ),
+                child: const Icon(
+                  Icons.bolt,
+                  size: 80,
+                  color: SportZoneTheme.electricLime,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'SPORTZONE',
+              style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                color: Colors.white,
+                letterSpacing: -1.5,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'SPEED  •  POWER  •  ZONE',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Colors.white60,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 48),
+            const SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  SportZoneTheme.electricLime,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -593,7 +1012,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -608,7 +1027,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 48),
               Text(
-                'Email hoặc Số điện thoại',
+                'Email',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: SportZoneTheme.secondary,
                 ),
@@ -616,9 +1035,8 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 8),
               TextField(
                 controller: usernameController,
-                decoration: const InputDecoration(
-                  hintText: 'Nhập email hoặc số điện thoại',
-                ),
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(hintText: 'Nhập email'),
               ),
               const SizedBox(height: 16),
               Text(
@@ -663,24 +1081,52 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {
-                    final username = usernameController.text.trim();
-                    final password = passwordController.text;
-                    if (state.login(username, password)) {
-                      Navigator.pushReplacementNamed(context, '/main');
-                    } else {
-                      setState(() {
-                        error = 'Vui lòng điền đầy đủ tài khoản & mật khẩu!';
-                      });
-                    }
-                  },
-                  child: Text(
-                    'ĐĂNG NHẬP',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: SportZoneTheme.onPrimary,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
+                  onPressed: state.isLoadingAuth
+                      ? null
+                      : () async {
+                          final email = usernameController.text.trim();
+                          final password = passwordController.text;
+                          if (email.isEmpty || password.isEmpty) {
+                            setState(() {
+                              error = 'Vui lòng điền đầy đủ email và mật khẩu!';
+                            });
+                            return;
+                          }
+                          final errMessage = await state.loginAsync(
+                            email,
+                            password,
+                          );
+                          if (errMessage == null) {
+                            state.fetchCategories();
+                            state.fetchBrands();
+                            state.fetchProducts();
+                            if (!context.mounted) return;
+                            Navigator.pushReplacementNamed(context, '/main');
+                          } else {
+                            setState(() {
+                              error = errMessage;
+                            });
+                          }
+                        },
+                  child: state.isLoadingAuth
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          'ĐĂNG NHẬP',
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
+                                color: SportZoneTheme.onPrimary,
+                                fontWeight: FontWeight.w900,
+                              ),
+                        ),
                 ),
               ),
               const SizedBox(height: 28),
@@ -839,46 +1285,77 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          onPressed: () {
-                            final name = nameController.text.trim();
-                            final email = emailController.text.trim();
-                            final phone = phoneController.text.trim();
-                            final pass = passwordController.text;
-                            final confirm = confirmController.text;
-                            if (name.isEmpty ||
-                                email.isEmpty ||
-                                phone.isEmpty ||
-                                pass.isEmpty) {
-                              setState(
-                                () => error =
-                                    'Vui lòng hoàn thành mọi vùng nhập của bạn!',
-                              );
-                            } else if (pass != confirm) {
-                              setState(
-                                () => error = 'Mật khẩu xác nhận không khớp!',
-                              );
-                            } else if (!agreeTerms) {
-                              setState(
-                                () => error =
-                                    'Bạn phải đồng ý với các điều khoản của SPORTZONE!',
-                              );
-                            } else if (state.register(
-                              name,
-                              email,
-                              phone,
-                              pass,
-                            )) {
-                              Navigator.pushReplacementNamed(context, '/main');
-                            }
-                          },
-                          child: Text(
-                            'ĐĂNG KÝ',
-                            style: Theme.of(context).textTheme.headlineMedium
-                                ?.copyWith(
-                                  color: SportZoneTheme.onPrimary,
-                                  fontWeight: FontWeight.w900,
+                          onPressed: state.isLoadingAuth
+                              ? null
+                              : () async {
+                                  final name = nameController.text.trim();
+                                  final email = emailController.text.trim();
+                                  final phone = phoneController.text.trim();
+                                  final pass = passwordController.text;
+                                  final confirm = confirmController.text;
+                                  if (name.isEmpty ||
+                                      email.isEmpty ||
+                                      phone.isEmpty ||
+                                      pass.isEmpty) {
+                                    setState(
+                                      () => error =
+                                          'Vui lòng hoàn thành mọi vùng nhập của bạn!',
+                                    );
+                                  } else if (pass != confirm) {
+                                    setState(
+                                      () => error =
+                                          'Mật khẩu xác nhận không khớp!',
+                                    );
+                                  } else if (!agreeTerms) {
+                                    setState(
+                                      () => error =
+                                          'Bạn phải đồng ý với các điều khoản của SPORTZONE!',
+                                    );
+                                  } else {
+                                    final errMessage = await state
+                                        .registerAsync(
+                                          fullName: name,
+                                          email: email,
+                                          password: pass,
+                                          phone: phone,
+                                        );
+                                    if (errMessage == null) {
+                                      state.fetchCategories();
+                                      state.fetchBrands();
+                                      state.fetchProducts();
+                                      if (!context.mounted) return;
+                                      Navigator.pushReplacementNamed(
+                                        context,
+                                        '/main',
+                                      );
+                                    } else {
+                                      setState(() {
+                                        error = errMessage;
+                                      });
+                                    }
+                                  }
+                                },
+                          child: state.isLoadingAuth
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  'ĐĂNG KÝ',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(
+                                        color: SportZoneTheme.onPrimary,
+                                        fontWeight: FontWeight.w900,
+                                      ),
                                 ),
-                          ),
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -949,55 +1426,269 @@ class MainScreen extends StatelessWidget {
                 HomeScreen(),
                 StoreLocationScreen(),
                 ChatScreen(),
-                AlertsScreen(),
-                CartScreen(),
               ],
             ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: state.selectedTabIndex,
-        onTap: (index) => state.setSelectedTabIndex(index),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black,
-        selectedItemColor: SportZoneTheme.electricLime,
-        unselectedItemColor: Colors.white70,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.grid_on),
-            label: 'SHOP',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.location_on),
-            label: 'MAP',
-          ),
-          const BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'CHAT'),
-          BottomNavigationBarItem(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications),
-                if (state.notifications.any((n) => !n.isRead))
-                  const Positioned(right: 0, top: 0, child: BadgeBubble('!')),
-              ],
-            ),
-            label: 'ALERTS',
-          ),
-          BottomNavigationBarItem(
-            icon: Stack(
-              children: [
-                const Icon(Icons.shopping_cart),
-                if (state.cartItems.isNotEmpty)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: BadgeBubble(
-                      state.cartItems
-                          .fold<int>(0, (sum, item) => sum + item.quantity)
-                          .toString(),
+      bottomNavigationBar: _SportZoneFooter(
+        selectedIndex: state.selectedTabIndex,
+        user: user,
+        onTabSelected: state.setSelectedTabIndex,
+      ),
+    );
+  }
+}
+
+class _SportZoneFooter extends StatelessWidget {
+  final int selectedIndex;
+  final User? user;
+  final ValueChanged<int> onTabSelected;
+
+  const _SportZoneFooter({
+    required this.selectedIndex,
+    required this.user,
+    required this.onTabSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Container(
+        color: SportZoneTheme.background,
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                height: 74,
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: SportZoneTheme.surface,
+                  borderRadius: BorderRadius.circular(38),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x14000000),
+                      blurRadius: 18,
+                      offset: Offset(0, 8),
                     ),
-                  ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    _FooterNavItem(
+                      icon: Icons.grid_on,
+                      label: 'Shop',
+                      selected: selectedIndex == 0,
+                      onTap: () => onTabSelected(0),
+                    ),
+                    _FooterNavItem(
+                      icon: Icons.location_on,
+                      label: 'Map',
+                      selected: selectedIndex == 1,
+                      onTap: () => onTabSelected(1),
+                    ),
+                    _FooterNavItem(
+                      icon: Icons.chat_bubble_outline,
+                      label: 'Chat',
+                      selected: selectedIndex == 2,
+                      onTap: () => onTabSelected(2),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: () => _showAccountMenu(context),
+              child: CircleAvatar(
+                radius: 34,
+                backgroundColor: SportZoneTheme.electricLime,
+                backgroundImage:
+                    user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty
+                    ? NetworkImage(user!.avatarUrl!)
+                    : null,
+                child: user?.avatarUrl == null || user!.avatarUrl!.isEmpty
+                    ? Text(
+                        (user?.name.isNotEmpty == true)
+                            ? user!.name[0].toUpperCase()
+                            : 'U',
+                        style: const TextStyle(
+                          color: SportZoneTheme.primary,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAccountMenu(BuildContext context) {
+    final state = context.read<SportZoneState>();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: SportZoneTheme.surface,
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _AccountMenuItem(
+                  icon: Icons.person_outline,
+                  label: 'Profile',
+                  onTap: () => Navigator.pop(sheetContext),
+                ),
+                _AccountMenuItem(
+                  icon: Icons.settings_outlined,
+                  label: 'Settings',
+                  onTap: () => Navigator.pop(sheetContext),
+                ),
+                _AccountMenuItem(
+                  icon: Icons.help_outline,
+                  label: 'Support',
+                  onTap: () => Navigator.pop(sheetContext),
+                ),
+                const Divider(height: 1),
+                _AccountMenuItem(
+                  icon: Icons.logout,
+                  label: 'Logout',
+                  color: SportZoneTheme.error,
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await state.logoutAsync();
+                    if (context.mounted) {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
+                  },
+                ),
               ],
             ),
-            label: 'CART',
           ),
+        );
+      },
+    );
+  }
+}
+
+class _FooterNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _FooterNavItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            color: selected
+                ? SportZoneTheme.surfaceContainerLow
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(32),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: selected
+                    ? SportZoneTheme.primary
+                    : SportZoneTheme.secondary,
+                size: 25,
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: selected
+                      ? SportZoneTheme.primary
+                      : SportZoneTheme.secondary,
+                  fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountMenuItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color? color;
+  final VoidCallback onTap;
+
+  const _AccountMenuItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final itemColor = color ?? SportZoneTheme.primary;
+    return ListTile(
+      leading: Icon(icon, color: itemColor),
+      title: Text(
+        label,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: itemColor,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      onTap: onTap,
+    );
+  }
+}
+
+class _TopActionButton extends StatelessWidget {
+  final IconData icon;
+  final String? badgeText;
+  final VoidCallback onTap;
+
+  const _TopActionButton({
+    required this.icon,
+    required this.onTap,
+    this.badgeText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onTap,
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(icon, color: SportZoneTheme.primary),
+          if (badgeText != null)
+            Positioned(right: -7, top: -7, child: BadgeBubble(badgeText!)),
         ],
       ),
     );
@@ -1010,75 +1701,190 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<SportZoneState>();
-    final categories = ['Tất cả', 'Áo', 'Quần', 'Giày', 'Phụ kiện', 'Áo khoác'];
-    final filtered = state.selectedCategory == 'Tất cả'
-        ? productList
-        : productList
-              .where((item) => item.category == state.selectedCategory)
-              .toList();
+    final categories = ['Tất cả', ...state.apiCategories.map((c) => c.name)];
+    final brands = ['Tất cả', ...state.apiBrands.map((b) => b.name)];
+
+    final filtered = state.apiProducts;
     final chunks = <List<Product>>[];
     for (var i = 0; i < filtered.length; i += 2) {
       chunks.add(
         filtered.sublist(i, i + 2 > filtered.length ? filtered.length : i + 2),
       );
     }
+
     return Scaffold(
       backgroundColor: SportZoneTheme.background,
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 96),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Row(
           children: [
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 48,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  final category = categories[index];
-                  final selected = category == state.selectedCategory;
-                  return ElevatedButton(
-                    onPressed: () => state.selectCategory(category),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: selected
-                          ? SportZoneTheme.primary
-                          : SportZoneTheme.surfaceVariant,
-                      foregroundColor: selected
-                          ? SportZoneTheme.onPrimary
-                          : SportZoneTheme.secondary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+            CircleAvatar(
+              backgroundColor: SportZoneTheme.electricLime,
+              backgroundImage:
+                  state.currentUser?.avatarUrl != null &&
+                      state.currentUser!.avatarUrl!.isNotEmpty
+                  ? NetworkImage(state.currentUser!.avatarUrl!)
+                  : null,
+              child:
+                  state.currentUser?.avatarUrl == null ||
+                      state.currentUser!.avatarUrl!.isEmpty
+                  ? Text(
+                      (state.currentUser?.name.isNotEmpty == true)
+                          ? state.currentUser!.name[0].toUpperCase()
+                          : 'U',
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
                       ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      category,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  );
-                },
-                separatorBuilder: (_, _) => const SizedBox(width: 8),
-                itemCount: categories.length,
-              ),
+                    )
+                  : null,
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 80,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: ['Nike', 'Adidas', 'Puma', 'Under Armour', 'Reebok']
-                    .map((brand) {
-                      return Container(
-                        margin: const EdgeInsets.only(right: 12),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Chào, ${state.currentUser?.name ?? "Khách"}',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  state.currentUser?.role == 'ADMIN'
+                      ? 'Quản trị viên'
+                      : 'Thành viên',
+                  style: TextStyle(
+                    color: state.currentUser?.role == 'ADMIN'
+                        ? Colors.red
+                        : Colors.grey,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          _TopActionButton(
+            icon: Icons.notifications_outlined,
+            badgeText: state.notifications.any((n) => !n.isRead) ? '!' : null,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AlertsScreen()),
+            ),
+          ),
+          _TopActionButton(
+            icon: Icons.shopping_cart_outlined,
+            badgeText: state.cartItems.isNotEmpty
+                ? state.cartItems
+                      .fold<int>(0, (sum, item) => sum + item.quantity)
+                      .toString()
+                : null,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CartScreen()),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await Future.wait([
+              state.fetchCategories(),
+              state.fetchBrands(),
+              state.fetchProducts(
+                categoryId: state.selectedCategoryId,
+                brandId: state.selectedBrandId,
+              ),
+            ]);
+          },
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: 96),
+            children: [
+              const SizedBox(height: 12),
+              // Category row
+              SizedBox(
+                height: 48,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  scrollDirection: Axis.horizontal,
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    final selected = category == state.selectedCategory;
+                    return ElevatedButton(
+                      onPressed: () {
+                        if (category == 'Tất cả') {
+                          state.selectCategory('Tất cả', categoryId: null);
+                        } else {
+                          final cat = state.apiCategories.firstWhere(
+                            (c) => c.name == category,
+                          );
+                          state.selectCategory(
+                            category,
+                            categoryId: cat.categoryId,
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: selected
+                            ? SportZoneTheme.primary
+                            : SportZoneTheme.surfaceVariant,
+                        foregroundColor: selected
+                            ? SportZoneTheme.onPrimary
+                            : SportZoneTheme.secondary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        category,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    );
+                  },
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  itemCount: categories.length,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Brand row
+              SizedBox(
+                height: 48,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  scrollDirection: Axis.horizontal,
+                  itemBuilder: (context, index) {
+                    final brand = brands[index];
+                    final selected = brand == state.selectedBrand;
+                    return InkWell(
+                      onTap: () {
+                        if (brand == 'Tất cả') {
+                          state.selectBrand('Tất cả', brandId: null);
+                        } else {
+                          final bObj = state.apiBrands.firstWhere(
+                            (b) => b.name == brand,
+                          );
+                          state.selectBrand(brand, brandId: bObj.brandId);
+                        }
+                      },
+                      child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
+                          horizontal: 20,
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: SportZoneTheme.surfaceVariant,
+                          color: selected
+                              ? SportZoneTheme.primary
+                              : SportZoneTheme.surfaceVariant,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(
@@ -1087,56 +1893,114 @@ class HomeScreen extends StatelessWidget {
                             style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.w900,
-                                  color: SportZoneTheme.secondary,
+                                  color: selected
+                                      ? SportZoneTheme.onPrimary
+                                      : SportZoneTheme.secondary,
                                   letterSpacing: 1,
                                 ),
                           ),
                         ),
-                      );
-                    })
-                    .toList(),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'LATEST DROPS',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  Text(
-                    'View All',
-                    style: TextStyle(
-                      fontSize: 14,
-                      decoration: TextDecoration.underline,
-                      color: SportZoneTheme.secondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ...chunks.map(
-              (rowProducts) => Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                      ),
+                    );
+                  },
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  itemCount: brands.length,
                 ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    for (var product in rowProducts)
-                      Expanded(child: _ProductCard(product: product)),
-                    if (rowProducts.length == 1) ...[const Spacer(flex: 1)],
+                    Text(
+                      'LATEST DROPS',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    Text(
+                      'View All',
+                      style: TextStyle(
+                        fontSize: 14,
+                        decoration: TextDecoration.underline,
+                        color: SportZoneTheme.secondary,
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
-          ],
+              if (state.isLoadingProducts)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 60),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.black,
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Đang cập nhật xu hướng...',
+                          style: TextStyle(
+                            color: SportZoneTheme.secondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else if (state.apiProducts.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 60, horizontal: 24),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.sentiment_dissatisfied_outlined,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Không tìm thấy sản phẩm nào.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: SportZoneTheme.secondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Hãy thử chọn danh mục hoặc hãng khác nhé!',
+                          style: TextStyle(fontSize: 13, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                ...chunks.map(
+                  (rowProducts) => Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        for (var product in rowProducts)
+                          Expanded(child: _ProductCard(product: product)),
+                        if (rowProducts.length == 1) ...[const Spacer(flex: 1)],
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -1164,13 +2028,9 @@ class _ProductCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   child: AspectRatio(
                     aspectRatio: 1,
-                    child: Image.network(
-                      product.imageUrl,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, progress) =>
-                          progress == null
-                          ? child
-                          : const Center(child: CircularProgressIndicator()),
+                    child: ProductImage(
+                      imageUrl: product.imageUrl,
+                      productName: product.name,
                     ),
                   ),
                 ),
@@ -1268,6 +2128,72 @@ class _ProductCard extends StatelessWidget {
   }
 }
 
+class ProductImage extends StatelessWidget {
+  final String imageUrl;
+  final String productName;
+  final BoxFit fit;
+
+  const ProductImage({
+    required this.imageUrl,
+    required this.productName,
+    this.fit = BoxFit.cover,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cleanUrl = imageUrl.trim();
+    if (cleanUrl.isEmpty || cleanUrl.contains('example.com')) {
+      return _placeholder(context);
+    }
+
+    return Image.network(
+      cleanUrl,
+      fit: fit,
+      width: double.infinity,
+      height: double.infinity,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return const Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            color: SportZoneTheme.primary,
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) => _placeholder(context),
+    );
+  }
+
+  Widget _placeholder(BuildContext context) {
+    return Container(
+      color: SportZoneTheme.surfaceVariant,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.image_not_supported_outlined,
+            size: 40,
+            color: SportZoneTheme.secondary,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            productName,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: SportZoneTheme.secondary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
   const ProductDetailScreen({required this.product, super.key});
@@ -1325,11 +2251,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        child: Image.network(
-                          widget.product.imageUrl,
-                          fit: BoxFit.cover,
+                        child: SizedBox(
                           width: double.infinity,
                           height: MediaQuery.of(context).size.width * 0.8,
+                          child: ProductImage(
+                            imageUrl: widget.product.imageUrl,
+                            productName: widget.product.name,
+                          ),
                         ),
                       ),
                     ),
@@ -1461,48 +2389,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             }).toList(),
                           ),
                           const SizedBox(height: 24),
-                          Text(
-                            'SỐ LƯỢNG',
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(fontWeight: FontWeight.w900),
-                          ),
-                          const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: SportZoneTheme.surfaceVariant,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.remove,
-                                    color: SportZoneTheme.primary,
-                                  ),
-                                  onPressed: () {
-                                    if (quantity > 1) {
-                                      setState(() => quantity--);
-                                    }
-                                  },
-                                ),
-                                Text(
-                                  quantity.toString(),
-                                  style: Theme.of(context).textTheme.bodyLarge
-                                      ?.copyWith(fontWeight: FontWeight.w900),
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.add,
-                                    color: SportZoneTheme.primary,
-                                  ),
-                                  onPressed: () => setState(() => quantity++),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 24),
                           AccordionItem(
                             title: 'MÔ TẢ SẢN PHẨM',
                             content: widget.product.description,
@@ -1545,11 +2431,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
-                                          child: Image.network(
-                                            product.imageUrl,
+                                          child: SizedBox(
                                             width: 160,
                                             height: 160,
-                                            fit: BoxFit.cover,
+                                            child: ProductImage(
+                                              imageUrl: product.imageUrl,
+                                              productName: product.name,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(height: 6),
@@ -1581,7 +2469,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               },
                             ),
                           ),
-                          const SizedBox(height: 120),
+                          const SizedBox(height: 148),
                         ],
                       ),
                     ),
@@ -1593,35 +2481,84 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ),
       ),
       bottomSheet: Container(
+        width: double.infinity,
         color: SportZoneTheme.surface,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: SafeArea(
           top: false,
           child: SizedBox(
-            height: 56,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: SportZoneTheme.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+            height: 58,
+            child: Row(
+              children: [
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: SportZoneTheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.remove, size: 18),
+                        color: SportZoneTheme.primary,
+                        onPressed: quantity <= 1
+                            ? null
+                            : () => setState(() => quantity--),
+                      ),
+                      SizedBox(
+                        width: 24,
+                        child: Text(
+                          quantity.toString(),
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.add, size: 18),
+                        color: SportZoneTheme.primary,
+                        onPressed: () => setState(() => quantity++),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              onPressed: () {
-                state.addToCart(
-                  widget.product,
-                  size: selectedSize,
-                  color: selectedColor,
-                  quantity: quantity,
-                );
-                Navigator.pushNamed(context, '/main');
-              },
-              child: Text(
-                'THÊM VÀO GIỎ HÀNG',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: SportZoneTheme.onPrimary,
-                  fontWeight: FontWeight.w900,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: SportZoneTheme.primary,
+                      foregroundColor: SportZoneTheme.onPrimary,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                    onPressed: () {
+                      state.addToCart(
+                        widget.product,
+                        size: selectedSize,
+                        color: selectedColor,
+                        quantity: quantity,
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Đã thêm vào giỏ hàng')),
+                      );
+                    },
+                    child: Text(
+                      'THÊM VÀO GIỎ HÀNG',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: SportZoneTheme.onPrimary,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -1799,11 +2736,13 @@ class CartScreen extends StatelessWidget {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            item.imageUrl,
+                          child: SizedBox(
                             width: 96,
                             height: 96,
-                            fit: BoxFit.cover,
+                            child: ProductImage(
+                              imageUrl: item.imageUrl,
+                              productName: item.name,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -2104,11 +3043,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            item.imageUrl,
+                          child: SizedBox(
                             width: 64,
                             height: 64,
-                            fit: BoxFit.cover,
+                            child: ProductImage(
+                              imageUrl: item.imageUrl,
+                              productName: item.name,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -2916,23 +3857,26 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const BadgeTag(text: 'FLAGSHIP', isAccent: true),
-                          const SizedBox(height: 6),
-                          Text(
-                            'SportZone Flagship Store',
-                            style: Theme.of(context).textTheme.headlineMedium
-                                ?.copyWith(fontWeight: FontWeight.w900),
-                          ),
-                          Text(
-                            '123 Lê Lợi, Quận 1, TP.HCM',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: SportZoneTheme.secondary),
-                          ),
-                        ],
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const BadgeTag(text: 'FLAGSHIP', isAccent: true),
+                            const SizedBox(height: 6),
+                            Text(
+                              'SportZone Flagship Store',
+                              style: Theme.of(context).textTheme.headlineMedium
+                                  ?.copyWith(fontWeight: FontWeight.w900),
+                            ),
+                            Text(
+                              '123 Lê Lợi, Quận 1, TP.HCM',
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: SportZoneTheme.secondary),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 12),
                       Container(
                         width: 48,
                         height: 48,
