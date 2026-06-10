@@ -1,9 +1,18 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'dart:io' show Platform;
+
 class ApiService {
-  static const String baseUrl = 'https://prm393-be.onrender.com/api/v1';
+  // Use remote URL in Release mode, local URL in Debug mode
+  static String get baseUrl {
+    if (kReleaseMode) return 'https://prm393-be.onrender.com/api/v1';
+    if (kIsWeb) return 'http://127.0.0.1:3000/api/v1';
+    if (Platform.isAndroid) return 'http://10.0.2.2:3000/api/v1';
+    return 'http://127.0.0.1:3000/api/v1';
+  }
   static const String _tokenKey = 'jwt_access_token';
 
   // ─── Token Management ───
@@ -33,8 +42,6 @@ class ApiService {
 
   // ─── Auth Endpoints ───
 
-  /// POST /auth/register
-  /// Returns: { user: {...} } or error
   static Future<ApiResult> register({
     required String fullName,
     required String email,
@@ -68,8 +75,6 @@ class ApiService {
     }
   }
 
-  /// POST /auth/login
-  /// Returns: { accessToken: "...", user: {...} }
   static Future<ApiResult> login({
     required String email,
     required String password,
@@ -84,7 +89,6 @@ class ApiService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Save JWT token. The current NestJS backend returns accessToken.
         final token = data['accessToken'] ?? data['access_token'];
         if (token != null) {
           await saveToken(token.toString());
@@ -101,7 +105,44 @@ class ApiService {
     }
   }
 
-  /// POST /auth/logout
+  static Future<ApiResult> verifyOtp({required String email, required String otp}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/verify-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'otp': otp}),
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ApiResult.success(data);
+      } else {
+        final message = data['message'] ?? 'Xác thực thất bại';
+        return ApiResult.error(message is List ? message.join(', ') : message.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Không thể kết nối: $e');
+    }
+  }
+
+  static Future<ApiResult> resendOtp({required String email}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/resend-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ApiResult.success(data);
+      } else {
+        final message = data['message'] ?? 'Gửi lại thất bại';
+        return ApiResult.error(message is List ? message.join(', ') : message.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Không thể kết nối: $e');
+    }
+  }
+
   static Future<ApiResult> logout() async {
     try {
       final headers = await _authHeaders();
@@ -109,14 +150,11 @@ class ApiService {
       await clearToken();
       return ApiResult.success(null);
     } catch (e) {
-      // Even if server call fails, clear local token
       await clearToken();
       return ApiResult.success(null);
     }
   }
 
-  /// GET /auth/me
-  /// Returns user info if token is valid
   static Future<ApiResult> getMe() async {
     try {
       final headers = await _authHeaders();
@@ -138,13 +176,16 @@ class ApiService {
 
   // ─── Products Endpoints ───
 
-  /// GET /products
   static Future<ApiResult> getProducts({
     int page = 1,
     int limit = 20,
     String? search,
     String? categoryId,
     String? brandId,
+    int? minPrice,
+    int? maxPrice,
+    String? gender,
+    String? size,
   }) async {
     try {
       final queryParams = <String, String>{
@@ -155,6 +196,10 @@ class ApiService {
         if (categoryId case final id?) 'category_id': id,
         // ignore: use_null_aware_elements
         if (brandId case final id?) 'brand_id': id,
+        if (minPrice != null) 'min_price': minPrice.toString(),
+        if (maxPrice != null) 'max_price': maxPrice.toString(),
+        if (gender != null && gender.isNotEmpty) 'gender': gender,
+        if (size != null && size.isNotEmpty) 'size': size,
       };
 
       final uri = Uri.parse(
@@ -177,7 +222,6 @@ class ApiService {
     }
   }
 
-  /// GET /categories
   static Future<ApiResult> getCategories() async {
     try {
       final response = await http.get(
@@ -196,7 +240,6 @@ class ApiService {
     }
   }
 
-  /// GET /brands
   static Future<ApiResult> getBrands() async {
     try {
       final response = await http.get(
@@ -214,9 +257,131 @@ class ApiService {
       return ApiResult.error('Không thể kết nối: $e');
     }
   }
+
+  static Future<ApiResult> createBrand(String name) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/brands'),
+        headers: headers,
+        body: jsonEncode({'name': name}),
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ApiResult.success(data);
+      } else {
+        final msg = data['message'] ?? 'Thêm thương hiệu thất bại';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi thêm thương hiệu: $e');
+    }
+  }
+
+  // ─── Admin Product Endpoints ───
+
+  static Future<ApiResult> uploadProductImage(String filePath) async {
+    try {
+      final headers = await _authHeaders();
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/products/upload'));
+      if (headers['Authorization'] != null) {
+        request.headers['Authorization'] = headers['Authorization']!;
+      }
+      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ApiResult.success(data);
+      } else {
+        final msg = data['message'] ?? 'Upload thất bại';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi upload: $e');
+    }
+  }
+
+  static Future<ApiResult> createProduct(Map<String, dynamic> data) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/products'),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+
+      final responseData = jsonDecode(response.body);
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return ApiResult.success(responseData);
+      } else {
+        final msg = responseData['message'] ?? 'Thêm sản phẩm thất bại';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Không thể kết nối: $e');
+    }
+  }
+
+  static Future<ApiResult> getProductDetail(String id) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/products/$id'));
+      final responseData = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return ApiResult.success(responseData);
+      } else {
+        final msg = responseData['message'] ?? 'Lấy chi tiết sản phẩm thất bại';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Không thể kết nối: $e');
+    }
+  }
+
+  static Future<ApiResult> updateProduct(String id, Map<String, dynamic> data) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.patch(
+        Uri.parse('$baseUrl/products/$id'),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+
+      final responseData = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return ApiResult.success(responseData);
+      } else {
+        final msg = responseData['message'] ?? 'Cập nhật thất bại';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Không thể kết nối: $e');
+    }
+  }
+
+  static Future<ApiResult> deleteProduct(String id) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.delete(
+        Uri.parse('$baseUrl/products/$id'),
+        headers: headers,
+      );
+
+      final responseData = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return ApiResult.success(responseData);
+      } else {
+        final msg = responseData['message'] ?? 'Xóa thất bại';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Không thể kết nối: $e');
+    }
+  }
 }
 
-/// Simple result wrapper for API calls
 class ApiResult {
   final bool isSuccess;
   final dynamic data;
