@@ -57,10 +57,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     if (!mounted) return;
     setState(() => _isLoading = false);
     if (errMessage == null) {
+      state.fetchCategories();
+      state.fetchBrands();
+      state.fetchProducts();
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Xác thực thành công! Vui lòng đăng nhập.')),
+        const SnackBar(content: Text('Xác thực và đăng nhập thành công!')),
       );
-      Navigator.pushReplacementNamed(context, '/login');
+      Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
     } else {
       setState(() => error = errMessage);
     }

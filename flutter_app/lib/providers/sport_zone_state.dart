@@ -163,11 +163,17 @@ class SportZoneState extends ChangeNotifier {
     final result = await ApiService.verifyOtp(email: email, otp: otp);
 
     isLoadingAuth = false;
-    notifyListeners();
 
     if (result.isSuccess) {
+      final data = result.data as Map<String, dynamic>;
+      if (data['user'] != null) {
+        currentUser = User.fromJson(data['user'] as Map<String, dynamic>);
+      }
+      await fetchCart();
+      notifyListeners();
       return null; // success
     } else {
+      notifyListeners();
       return result.errorMessage ?? 'Xác thực thất bại';
     }
   }

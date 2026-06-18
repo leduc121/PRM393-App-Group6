@@ -135,6 +135,10 @@ class ApiService {
       ).timeout(_timeout);
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final token = data['accessToken'] ?? data['access_token'];
+        if (token != null) {
+          await saveToken(token.toString());
+        }
         return ApiResult.success(data);
       } else {
         final message = data['message'] ?? 'Xác thực thất bại';
