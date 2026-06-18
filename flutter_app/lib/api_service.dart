@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -18,6 +19,18 @@ class ApiService {
     // return 'http://127.0.0.1:3000/api/v1';
   }
   static const String _tokenKey = 'jwt_access_token';
+  static const Duration _timeout = Duration(seconds: 120);
+
+  /// Gửi ping "đánh thức" server Render (gọi khi mở app để server bắt đầu cold start sớm)
+  static Future<void> warmUp() async {
+    try {
+      http.get(Uri.parse('$baseUrl/products?limit=1')).timeout(
+        const Duration(seconds: 120),
+      );
+    } catch (_) {
+      // Bỏ qua lỗi - chỉ cần gửi request để đánh thức server
+    }
+  }
 
   // ─── Token Management ───
 
@@ -62,7 +75,7 @@ class ApiService {
           'password': password,
           if (phone != null && phone.isNotEmpty) 'phone': phone,
         }),
-      );
+      ).timeout(_timeout);
 
       final data = jsonDecode(response.body);
 
@@ -74,6 +87,8 @@ class ApiService {
           message is List ? message.join(', ') : message.toString(),
         );
       }
+    } on TimeoutException {
+      return ApiResult.error('Server phản hồi quá lâu. Vui lòng thử lại.');
     } catch (e) {
       return ApiResult.error('Không thể kết nối đến server: $e');
     }
@@ -88,7 +103,7 @@ class ApiService {
         Uri.parse('$baseUrl/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
-      );
+      ).timeout(_timeout);
 
       final data = jsonDecode(response.body);
 
@@ -104,6 +119,8 @@ class ApiService {
           message is List ? message.join(', ') : message.toString(),
         );
       }
+    } on TimeoutException {
+      return ApiResult.error('Server phản hồi quá lâu. Vui lòng thử lại.');
     } catch (e) {
       return ApiResult.error('Không thể kết nối đến server: $e');
     }
@@ -115,7 +132,7 @@ class ApiService {
         Uri.parse('$baseUrl/auth/verify-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'otp': otp}),
-      );
+      ).timeout(_timeout);
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {
         return ApiResult.success(data);
@@ -123,6 +140,8 @@ class ApiService {
         final message = data['message'] ?? 'Xác thực thất bại';
         return ApiResult.error(message is List ? message.join(', ') : message.toString());
       }
+    } on TimeoutException {
+      return ApiResult.error('Server phản hồi quá lâu. Vui lòng thử lại.');
     } catch (e) {
       return ApiResult.error('Không thể kết nối: $e');
     }
@@ -134,7 +153,7 @@ class ApiService {
         Uri.parse('$baseUrl/auth/resend-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email}),
-      );
+      ).timeout(_timeout);
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {
         return ApiResult.success(data);
@@ -142,6 +161,8 @@ class ApiService {
         final message = data['message'] ?? 'Gửi lại thất bại';
         return ApiResult.error(message is List ? message.join(', ') : message.toString());
       }
+    } on TimeoutException {
+      return ApiResult.error('Server phản hồi quá lâu. Vui lòng thử lại.');
     } catch (e) {
       return ApiResult.error('Không thể kết nối: $e');
     }
@@ -165,7 +186,7 @@ class ApiService {
       final response = await http.get(
         Uri.parse('$baseUrl/auth/me'),
         headers: headers,
-      );
+      ).timeout(_timeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -213,7 +234,7 @@ class ApiService {
       final response = await http.get(
         uri,
         headers: {'Content-Type': 'application/json'},
-      );
+      ).timeout(_timeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -231,7 +252,7 @@ class ApiService {
       final response = await http.get(
         Uri.parse('$baseUrl/categories'),
         headers: {'Content-Type': 'application/json'},
-      );
+      ).timeout(_timeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -249,7 +270,7 @@ class ApiService {
       final response = await http.get(
         Uri.parse('$baseUrl/brands'),
         headers: {'Content-Type': 'application/json'},
-      );
+      ).timeout(_timeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -331,7 +352,7 @@ class ApiService {
 
   static Future<ApiResult> getProductDetail(String id) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/products/$id'));
+      final response = await http.get(Uri.parse('$baseUrl/products/$id')).timeout(_timeout);
       final responseData = jsonDecode(response.body);
       if (response.statusCode == 200) {
         return ApiResult.success(responseData);
@@ -393,7 +414,7 @@ class ApiService {
       final response = await http.get(
         Uri.parse('$baseUrl/cart'),
         headers: headers,
-      );
+      ).timeout(_timeout);
 
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -420,7 +441,7 @@ class ApiService {
           'variantId': variantId,
           'quantity': quantity,
         }),
-      );
+      ).timeout(_timeout);
 
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {

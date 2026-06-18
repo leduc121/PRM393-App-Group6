@@ -25,6 +25,7 @@ class SportZoneState extends ChangeNotifier {
   bool isLoadingProducts = false;
   bool isLoadingAuth = false;
   String? authError;
+  String? searchQuery;
 
   final List<CartItem> cartItems = [];
   final List<NotificationItem> notifications = [
@@ -217,9 +218,21 @@ class SportZoneState extends ChangeNotifier {
 
   // ─── Products / Categories / Brands (API) ───
 
-  Future<void> fetchProducts({String? categoryId, String? brandId, int? minPrice, int? maxPrice, String? gender, String? size}) async {
+  Future<void> fetchProducts({
+    String? categoryId,
+    String? brandId,
+    int? minPrice,
+    int? maxPrice,
+    String? gender,
+    String? size,
+    String? search,
+  }) async {
     isLoadingProducts = true;
     notifyListeners();
+
+    if (search != null) {
+      searchQuery = search.isEmpty ? null : search;
+    }
 
     final result = await ApiService.getProducts(
       limit: 50,
@@ -229,6 +242,7 @@ class SportZoneState extends ChangeNotifier {
       maxPrice: maxPrice,
       gender: gender,
       size: size,
+      search: searchQuery,
     );
 
     if (result.isSuccess && result.data != null) {

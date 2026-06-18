@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Đánh thức server Render ngay khi mở app (không chờ kết quả)
+  ApiService.warmUp();
   runApp(const SportZoneApp());
 }
 

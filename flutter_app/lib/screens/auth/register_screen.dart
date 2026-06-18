@@ -19,6 +19,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool agreeTerms = false;
   String? error;
   bool _isLoading = false;
+  String? _passwordError;
+
+  @override
+  void initState() {
+    super.initState();
+    passwordController.addListener(_validatePasswords);
+    confirmController.addListener(_validatePasswords);
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+    passwordController.dispose();
+    confirmController.dispose();
+    super.dispose();
+  }
+
+  void _validatePasswords() {
+    final pass = passwordController.text;
+    final confirm = confirmController.text;
+    if (confirm.isEmpty) {
+      setState(() => _passwordError = null);
+    } else if (pass != confirm) {
+      setState(() => _passwordError = 'Mật khẩu xác nhận không khớp!');
+    } else {
+      setState(() => _passwordError = null);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 14),
                     _buildField('Mật khẩu', '••••••••', passwordController, obscure: true),
                     const SizedBox(height: 14),
-                    _buildField('Xác nhận mật khẩu', '••••••••', confirmController, obscure: true),
+                    _buildField('Xác nhận mật khẩu', '••••••••', confirmController, obscure: true, errorText: _passwordError),
                     const SizedBox(height: 16),
                     Row(
                       children: [
@@ -182,7 +212,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildField(String label, String placeholder, TextEditingController controller, {bool obscure = false}) {
+  Widget _buildField(String label, String placeholder, TextEditingController controller, {bool obscure = false, String? errorText}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -198,6 +228,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             hintText: placeholder,
             filled: true,
             fillColor: SportZoneTheme.surfaceVariant,
+            errorText: errorText,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,

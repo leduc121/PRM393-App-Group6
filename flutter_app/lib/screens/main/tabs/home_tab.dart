@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
+import 'dart:async';
 
 class _ProductCard extends StatelessWidget {
   final Product product;
@@ -123,8 +124,51 @@ class _ProductCard extends StatelessWidget {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {});
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = context.read<SportZoneState>();
+      _searchController.text = state.searchQuery ?? '';
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      final state = context.read<SportZoneState>();
+      state.fetchProducts(
+        categoryId: state.selectedCategoryId,
+        brandId: state.selectedBrandId,
+        minPrice: state.filterMinPrice,
+        maxPrice: state.filterMaxPrice,
+        gender: state.filterGender,
+        size: state.filterSize,
+        search: query,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -250,23 +294,35 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
                           color: SportZoneTheme.surfaceVariant,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.search, color: SportZoneTheme.secondary),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Tìm kiếm sản phẩm...',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: SportZoneTheme.secondary,
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: _onSearchChanged,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
-                            ),
-                          ],
+                          decoration: InputDecoration(
+                            hintText: 'Tìm kiếm sản phẩm...',
+                            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: SportZoneTheme.secondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                            prefixIcon: const Icon(Icons.search, color: SportZoneTheme.secondary),
+                            suffixIcon: _searchController.text.isNotEmpty
+                                ? GestureDetector(
+                                    onTap: () {
+                                      _searchController.clear();
+                                      _onSearchChanged('');
+                                    },
+                                    child: const Icon(Icons.clear, color: SportZoneTheme.secondary),
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
                         ),
                       ),
                     ),
