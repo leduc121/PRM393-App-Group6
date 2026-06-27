@@ -123,6 +123,15 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 4),
+                          if (product.shortDescription != null && product.shortDescription!.isNotEmpty) ...[
+                            Text(
+                              product.shortDescription!,
+                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                          ],
                           Text(formatVnd(product.price), style: const TextStyle(color: SportZoneTheme.primary, fontWeight: FontWeight.w600)),
                           Text('Kho: ${product.totalStock} | Danh mục: ${product.category}', style: const TextStyle(fontSize: 12)),
                         ],

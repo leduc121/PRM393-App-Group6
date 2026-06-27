@@ -84,6 +84,16 @@ class _ProductCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            Text(
+              product.shortDescription ?? 'Không có mô tả ngắn',
+              style: const TextStyle(
+                color: Colors.red,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: 4),
             Row(
               children: [
