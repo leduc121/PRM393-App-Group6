@@ -17,6 +17,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   final _formKey = GlobalKey<FormState>();
   
   late TextEditingController _nameCtrl;
+  late TextEditingController _shortDescCtrl;
   late TextEditingController _descCtrl;
   late TextEditingController _priceCtrl;
   late TextEditingController _salePriceCtrl;
@@ -41,6 +42,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     super.initState();
     final p = widget.product;
     _nameCtrl = TextEditingController(text: p?.name ?? '');
+    _shortDescCtrl = TextEditingController(text: p?.shortDescription ?? '');
     _descCtrl = TextEditingController(text: p?.description ?? '');
     _priceCtrl = TextEditingController(text: p?.originalPrice?.toString() ?? p?.price.toString() ?? '');
     _salePriceCtrl = TextEditingController(text: p?.originalPrice != null ? p?.price.toString() : '');
@@ -65,6 +67,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _shortDescCtrl.dispose();
     _descCtrl.dispose();
     _priceCtrl.dispose();
     _salePriceCtrl.dispose();
@@ -114,6 +117,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
       'categoryId': _selectedCategoryId,
       'brandId': finalBrandId,
       'name': _nameCtrl.text.trim(),
+      'shortDescription': _shortDescCtrl.text.trim(),
       'description': _descCtrl.text.trim(),
       'price': int.parse(_priceCtrl.text),
       'salePrice': _salePriceCtrl.text.isNotEmpty ? int.parse(_salePriceCtrl.text) : null,
@@ -287,6 +291,12 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                         child: Image.network(_imageCtrl.text, errorBuilder: (c, e, s) => const Text('Ảnh không hợp lệ')),
                       ),
                     ],
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _shortDescCtrl,
+                      maxLines: 2,
+                      decoration: const InputDecoration(labelText: 'Mô tả ngắn gọn', border: OutlineInputBorder()),
+                    ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _descCtrl,

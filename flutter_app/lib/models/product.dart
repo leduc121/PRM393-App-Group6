@@ -13,6 +13,7 @@ class Product {
   final String imageUrl;
   final String category;
   final String description;
+  final String? shortDescription;
   final String? brandId;
   final String? categoryId;
   final List<String> images;
@@ -32,6 +33,7 @@ class Product {
     required this.imageUrl,
     required this.category,
     required this.description,
+    this.shortDescription,
     this.brandId,
     this.categoryId,
     this.images = const [],
@@ -95,6 +97,7 @@ class Product {
       imageUrl: firstImage,
       category: catName,
       description: json['description']?.toString() ?? '',
+      shortDescription: json['shortDescription']?.toString() ?? json['short_description']?.toString(),
       brandId: json['brandId']?.toString(),
       categoryId: json['categoryId']?.toString(),
       images: imagesList,
