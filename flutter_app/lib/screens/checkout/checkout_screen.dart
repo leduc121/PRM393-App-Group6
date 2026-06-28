@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../api_service.dart';
 
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
@@ -150,6 +152,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   label: 'Ví điện tử (Momo/ZaloPay)',
                   icon: Icons.account_balance_wallet,
                 ),
+                PaymentOption(
+                  code: 'stripe',
+                  label: 'Thẻ quốc tế (Stripe)',
+                  icon: Icons.credit_card,
+                ),
               ].map((payment) {
                 final selected = selectedPayment == payment.code;
                 return GestureDetector(
@@ -266,9 +273,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         Navigator.pop(context); // Pop loading dialog
                         
                         if (result.isSuccess) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Đặt hàng thành công!')),
-                          );
+                          if (selectedPayment == 'stripe') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Đang chuyển hướng sang Stripe...')),
+                            );
+                            final orderId = result.data['orderId'];
+                            if (orderId != null) {
+                              final stripeResult = await ApiService.createStripeCheckoutSession(orderId);
+                              if (stripeResult.isSuccess && stripeResult.data['checkoutUrl'] != null) {
+                                final url = Uri.parse(stripeResult.data['checkoutUrl']);
+                                await launchUrl(url, mode: LaunchMode.inAppBrowserView);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(stripeResult.errorMessage ?? 'Không thể mở trang thanh toán Stripe')),
+                                );
+                              }
+                            }
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Đặt hàng thành công!')),
+                            );
+                          }
+
                           Navigator.pushNamedAndRemoveUntil(
                             context,
                             '/main',

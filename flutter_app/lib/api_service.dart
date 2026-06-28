@@ -558,6 +558,26 @@ class ApiService {
     }
   }
 
+  static Future<ApiResult> createStripeCheckoutSession(String orderId) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/payment/create-checkout-session/$orderId'),
+        headers: headers,
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ApiResult.success(data);
+      } else {
+        final msg = data['message'] ?? 'Không thể khởi tạo thanh toán Stripe';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi tạo phiên thanh toán: $e');
+    }
+  }
+
   static Future<ApiResult> getMyOrders() async {
     try {
       final headers = await _authHeaders();
