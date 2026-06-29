@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
 
-
 class _AccountMenuItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -201,6 +200,14 @@ class _SportZoneFooter extends StatelessWidget {
                       icon: Icons.person_outline,
                       label: 'Profile',
                       onTap: () => Navigator.pop(sheetContext),
+                    ),
+                    _AccountMenuItem(
+                      icon: Icons.timeline_outlined,
+                      label: 'Trạng thái',
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        Navigator.pushNamed(context, '/order-status');
+                      },
                     ),
                     _AccountMenuItem(
                       icon: Icons.settings_outlined,

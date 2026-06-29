@@ -41,6 +41,9 @@ dependencies:
   http_parser: ^4.1.2
   pinput: ^6.0.2
   url_launcher: ^6.3.2
+  flutter_map: ^8.2.2
+  latlong2: ^0.9.1
+  geolocator: ^14.0.2
 
 dev_dependencies:
   flutter_test:

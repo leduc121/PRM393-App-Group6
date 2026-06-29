@@ -28,6 +28,7 @@ class SportZoneApp extends StatelessWidget {
           '/otp_verification': (_) => const OtpVerificationScreen(email: ''),
           '/main': (_) => const MainScreen(),
           '/checkout': (_) => const CheckoutScreen(),
+          '/order-status': (_) => const OrderStatusScreen(),
         },
         onGenerateRoute: (settings) {
           if (settings.name == '/product') {

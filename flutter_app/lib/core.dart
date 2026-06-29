@@ -6,6 +6,7 @@ export 'models/cart_item.dart';
 export 'models/notification_item.dart';
 export 'models/chat_message.dart';
 export 'models/product_variant.dart';
+export 'models/order.dart';
 export 'theme/app_theme.dart';
 export 'providers/sport_zone_state.dart';
 export 'api_service.dart';
@@ -28,4 +29,6 @@ export 'screens/main/tabs/chat_tab.dart';
 export 'screens/product/product_detail_screen.dart';
 export 'screens/checkout/checkout_screen.dart';
 export 'screens/checkout/cart_screen.dart';
+export 'screens/orders/order_status_screen.dart';
+
 // export 'screens/main/tabs/notifications_tab.dart'; // We didn't create this file properly if it was missing
