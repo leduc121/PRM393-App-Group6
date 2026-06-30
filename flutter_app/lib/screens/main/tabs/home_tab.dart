@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
 import 'package:flutter_app/screens/admin/admin_product_list_screen.dart';
 import 'package:flutter_app/screens/admin/admin_order_list_screen.dart';
+import 'package:flutter_app/screens/admin/admin_chat_list_screen.dart';
 import 'package:flutter_app/screens/checkout/cart_screen.dart';
 import 'dart:async';
 
@@ -518,6 +519,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => const AdminOrderListScreen()),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1),
+                    _AdminMenuItem(
+                      icon: Icons.support_agent_outlined,
+                      label: 'Quản lý tin nhắn',
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AdminChatListScreen()),
                         );
                       },
                     ),

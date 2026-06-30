@@ -820,6 +820,100 @@ class ApiService {
       return ApiResult.error('Lỗi xóa địa chỉ: $e');
     }
   }
+
+  // --- CHAT APIs ---
+
+  static Future<ApiResult> getMessages() async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/messages'),
+        headers: headers,
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return ApiResult.success(data);
+      } else {
+        return ApiResult.error(data['message']?.toString() ?? 'Lỗi tải tin nhắn');
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi tải tin nhắn: $e');
+    }
+  }
+
+  static Future<ApiResult> sendMessage(String content) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/messages'),
+        headers: headers,
+        body: jsonEncode({'content': content}),
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return ApiResult.success(data);
+      } else {
+        return ApiResult.error(data['message']?.toString() ?? 'Lỗi gửi tin nhắn');
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi gửi tin nhắn: $e');
+    }
+  }
+
+  static Future<ApiResult> getChatSessions() async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/messages/sessions'),
+        headers: headers,
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return ApiResult.success(data);
+      } else {
+        return ApiResult.error(data['message']?.toString() ?? 'Lỗi tải phiên chat');
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi tải phiên chat: $e');
+    }
+  }
+
+  static Future<ApiResult> getMessagesForAdmin(String uid) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/messages/$uid'),
+        headers: headers,
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return ApiResult.success(data);
+      } else {
+        return ApiResult.error(data['message']?.toString() ?? 'Lỗi tải lịch sử chat');
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi tải lịch sử chat: $e');
+    }
+  }
+
+  static Future<ApiResult> replyMessage(String uid, String content) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/messages/$uid/reply'),
+        headers: headers,
+        body: jsonEncode({'content': content}),
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return ApiResult.success(data);
+      } else {
+        return ApiResult.error(data['message']?.toString() ?? 'Lỗi trả lời tin nhắn');
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi trả lời tin nhắn: $e');
+    }
+  }
 }
 
 class ApiResult {

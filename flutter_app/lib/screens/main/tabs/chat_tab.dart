@@ -1,11 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
+import 'dart:async';
 
 
 class _ChatScreenState extends State<ChatScreen> {
   final controller = TextEditingController();
   final scrollController = ScrollController();
+  Timer? _pollingTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SportZoneState>().fetchMessages();
+    });
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) {
+        context.read<SportZoneState>().fetchMessages();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    controller.dispose();
+    scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,8 +72,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   horizontal: 16,
                   vertical: 16,
                 ),
-                itemCount:
-                    state.chatMessages.length + (state.isBotTyping ? 1 : 0) + 1,
+                itemCount: state.chatMessages.length + 1,
                 itemBuilder: (context, index) {
                   if (index == 0) {
                     return Center(
@@ -75,28 +97,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     );
                   }
                   final msgIndex = index - 1;
-                  if (msgIndex < state.chatMessages.length) {
-                    final msg = state.chatMessages[msgIndex];
-                    return _chatBubble(msg);
-                  }
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Row(
-                      children: [
-                        const SizedBox(width: 8),
-                        const CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: SportZoneTheme.primary,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Bots đang soạn tin nhắn...',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: SportZoneTheme.secondary),
-                        ),
-                      ],
-                    ),
-                  );
+                  final msg = state.chatMessages[msgIndex];
+                  return _chatBubble(msg);
                 },
               ),
             ),
@@ -185,7 +187,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'SPORTZONE BOT',
+                      'SPORTZONE ADMIN',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.w900,
                       ),
@@ -196,18 +198,32 @@ class _ChatScreenState extends State<ChatScreen> {
               ],
             ),
           Flexible(
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: alignEnd ? Colors.black : SportZoneTheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                msg.message,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: alignEnd ? Colors.white : SportZoneTheme.primary,
+            child: Column(
+              crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: alignEnd ? Colors.black : SportZoneTheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    msg.message,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: alignEnd ? Colors.white : SportZoneTheme.primary,
+                    ),
+                  ),
                 ),
-              ),
+                if (alignEnd)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4, right: 4),
+                    child: Icon(
+                      msg.isRead ? Icons.done_all : Icons.check,
+                      size: 16,
+                      color: msg.isRead ? Colors.blue : SportZoneTheme.secondary,
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
