@@ -7,6 +7,10 @@ class Order {
   final int discount;
   final int total;
   final DateTime? createdAt;
+  
+  // For Admin View
+  final String? customerName;
+  final String? customerPhone;
 
   Order({
     required this.id,
@@ -17,6 +21,8 @@ class Order {
     required this.discount,
     required this.total,
     this.createdAt,
+    this.customerName,
+    this.customerPhone,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -32,6 +38,8 @@ class Order {
       createdAt: DateTime.tryParse(
         (json['createdAt'] ?? json['created_at'] ?? '').toString(),
       ),
+      customerName: json['address']?['recipientName'] ?? json['user']?['fullName'],
+      customerPhone: json['address']?['phone'] ?? json['user']?['phone'],
     );
   }
 

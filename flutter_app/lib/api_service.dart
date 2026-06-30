@@ -598,6 +598,26 @@ class ApiService {
     }
   }
 
+  static Future<ApiResult> getAllOrders() async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/orders/all'),
+        headers: headers,
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return ApiResult.success(data);
+      } else {
+        final msg = data['message'] ?? 'Không thể tải danh sách đơn hàng';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi tải danh sách đơn hàng: $e');
+    }
+  }
+
   static Future<ApiResult> getOrderById(String id) async {
     try {
       final headers = await _authHeaders();

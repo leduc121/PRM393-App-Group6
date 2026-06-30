@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
+import 'package:flutter_app/screens/admin/admin_product_list_screen.dart';
+import 'package:flutter_app/screens/admin/admin_order_list_screen.dart';
+import 'package:flutter_app/screens/checkout/cart_screen.dart';
 import 'dart:async';
 
 class _ProductCard extends StatelessWidget {
@@ -254,10 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
           if (state.currentUser?.role?.toUpperCase() == 'ADMIN')
             TopActionButton(
               icon: Icons.admin_panel_settings_outlined,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AdminProductListScreen()),
-              ),
+              onTap: () => _showAdminMenu(context),
             ),
 
           TopActionButton(
@@ -481,5 +481,96 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  void _showAdminMenu(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Material(
+              color: SportZoneTheme.surface,
+              borderRadius: BorderRadius.circular(22),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _AdminMenuItem(
+                      icon: Icons.inventory_2_outlined,
+                      label: 'Quản lý sản phẩm',
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AdminProductListScreen()),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1),
+                    _AdminMenuItem(
+                      icon: Icons.receipt_long_outlined,
+                      label: 'Quản lý đơn hàng',
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AdminOrderListScreen()),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
+class _AdminMenuItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _AdminMenuItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Row(
+          children: [
+            Icon(icon, color: SportZoneTheme.primary, size: 22),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: SportZoneTheme.primary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right,
+              color: SportZoneTheme.secondary,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
