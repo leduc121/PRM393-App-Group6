@@ -524,30 +524,37 @@ class SportZoneState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> sendChatMessage(String message) async {
-    if (message.trim().isEmpty) {
-      return;
+  Future<void> fetchMessages() async {
+    final result = await ApiService.getMessages();
+    if (result.isSuccess) {
+      final raw = result.data;
+      if (raw is List) {
+        chatMessages = raw
+            .whereType<Map<String, dynamic>>()
+            .map((json) => ChatMessage.fromJson(json, isCurrentUserAdmin: false))
+            .toList();
+        notifyListeners();
+      }
     }
-    chatMessages.add(ChatMessage(message: message.trim(), isUser: true));
-    isBotTyping = true;
+  }
+
+  Future<void> sendChatMessage(String message) async {
+    if (message.trim().isEmpty) return;
+    
+    // Add locally for instant UI update
+    chatMessages.add(
+      ChatMessage(message: message.trim(), isUser: true, isRead: false),
+    );
     notifyListeners();
 
-    final history = List<ChatMessage>.from(chatMessages);
-    final response = await GeminiClient.getChatBotResponse(message, history);
-    chatMessages.add(ChatMessage(message: response, isUser: false));
-    isBotTyping = false;
-    notifyListeners();
+    final result = await ApiService.sendMessage(message);
+    if (result.isSuccess) {
+      await fetchMessages();
+    }
   }
 
   void clearChat() {
     chatMessages.clear();
-    chatMessages.add(
-      ChatMessage(
-        message:
-            'Chào mừng bạn quay lại với SportZone hỗ trợ trực tuyến! Tôi là trợ lý ảo, tôi có thể tư vấn mẫu giày Nike Dunk Low, Pegasus hay Air Zoom cho bạn hôm nay?',
-        isUser: false,
-      ),
-    );
     notifyListeners();
   }
 }
