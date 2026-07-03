@@ -44,19 +44,24 @@ class _AdminChatListScreenState extends State<AdminChatListScreen> {
 
     if (result.isSuccess) {
       final raw = result.data;
+      debugPrint('[AdminChat] getChatSessions response: $raw');
       if (raw is List) {
         setState(() {
           _sessions = List<Map<String, dynamic>>.from(raw);
           _isLoading = false;
         });
-      }
-    } else {
-      if (!quiet) {
+      } else {
         setState(() {
-          _error = result.errorMessage ?? 'Lỗi tải danh sách';
           _isLoading = false;
+          _error = 'Dữ liệu không hợp lệ';
         });
       }
+    } else {
+      debugPrint('[AdminChat] getChatSessions error: ${result.errorMessage}');
+      setState(() {
+        _error = result.errorMessage ?? 'Lỗi tải danh sách';
+        _isLoading = false;
+      });
     }
   }
 
@@ -96,9 +101,9 @@ class _AdminChatListScreenState extends State<AdminChatListScreen> {
                           itemBuilder: (context, index) {
                             final session = _sessions[index];
                             final uid = session['user_uid'];
-                            final name = session['user_fullName'] ?? 'Khách hàng';
+                            final name = session['user_full_name'] ?? session['user_fullName'] ?? 'Khách hàng';
                             final email = session['user_email'] ?? '';
-                            final avatar = session['user_avatarUrl'];
+                            final avatar = session['user_avatar_url'] ?? session['user_avatarUrl'];
                             final unreadCount = int.tryParse(session['unread_count']?.toString() ?? '0') ?? 0;
                             final lastActive = session['last_activity'] != null
                                 ? DateTime.tryParse(session['last_activity'].toString())?.toLocal()
