@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
+import 'package:flutter_app/screens/admin/admin_chat_list_screen.dart';
 
 class _AccountMenuItem extends StatelessWidget {
   final IconData icon;
@@ -250,15 +251,16 @@ class MainScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<SportZoneState>();
     final user = state.currentUser;
+    final isAdmin = user?.role == 'admin';
     return Scaffold(
       body: user == null
           ? const Center(child: Text('Vui lòng đăng nhập lại.'))
           : IndexedStack(
               index: state.selectedTabIndex,
-              children: const [
-                HomeScreen(),
-                StoreLocationScreen(),
-                ChatScreen(),
+              children: [
+                const HomeScreen(),
+                const StoreLocationScreen(),
+                isAdmin ? const AdminChatListScreen() : const ChatScreen(),
               ],
             ),
       bottomNavigationBar: _SportZoneFooter(
