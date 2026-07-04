@@ -25,40 +25,7 @@ class SportZoneState extends ChangeNotifier {
   String? searchQuery;
 
   final List<CartItem> cartItems = [];
-  final List<NotificationItem> notifications = [
-    NotificationItem(
-      title: 'Đơn hàng đã được giao',
-      content:
-          'Đơn hàng #SZ123 của bạn đã giao thành công tại địa chỉ mặc định. Cảm ơn bạn đã tin dùng SportZone.',
-      timeAgo: '2 giờ trước',
-      category: 'DELIVERY',
-      isRead: false,
-    ),
-    NotificationItem(
-      title: 'Drop Alert: Jordan Retro 4',
-      content:
-          'Phiên bản giới hạn sắp có mặt tại cửa hàng sau 15 phút nữa. Chuẩn bị thanh toán ngay!',
-      timeAgo: '4 giờ trước',
-      category: 'ALERT',
-      isRead: false,
-    ),
-    NotificationItem(
-      title: 'Voucher 20% sắp hết hạn',
-      content:
-          'Mã SPORT20 của bạn sẽ hết hiệu lực vào cuối ngày hôm nay. Đừng bỏ lỡ!',
-      timeAgo: 'Hôm qua',
-      category: 'PROMO',
-      isRead: true,
-    ),
-    NotificationItem(
-      title: 'Ưu đãi sinh nhật cho bạn',
-      content:
-          'Chúc mừng sinh nhật! Nhận ngay món quà bí mật trong ví voucher của bạn.',
-      timeAgo: '2 ngày trước',
-      category: 'ALERT',
-      isRead: false,
-    ),
-  ];
+  final List<NotificationItem> notifications = [];
 
   final List<ChatMessage> chatMessages = [
     ChatMessage(
