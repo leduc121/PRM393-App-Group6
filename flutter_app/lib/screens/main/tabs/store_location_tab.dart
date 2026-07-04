@@ -66,7 +66,6 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
       }
     });
     await _geocodeStoreAddress();
-    await _useCurrentLocation(moveCamera: false, refreshRoute: true);
   }
 
   @override
@@ -181,8 +180,10 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
                 _mapAction(
                   icon: Icons.my_location,
                   loading: _isLoadingLocation,
-                  onTap: () =>
-                      _useCurrentLocation(moveCamera: true, refreshRoute: true),
+                  onTap: () => _useCurrentLocation(
+                    moveCamera: true,
+                    refreshRoute: false,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 _mapAction(
@@ -336,9 +337,10 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
     }
   }
 
-  Future<void> _useCurrentLocation({
+  Future<LatLng?> _useCurrentLocation({
     required bool moveCamera,
     required bool refreshRoute,
+    bool allowFallback = false,
   }) async {
     setState(() {
       _isLoadingLocation = true;
@@ -349,7 +351,7 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
       final enabled = await Geolocator.isLocationServiceEnabled();
       if (!enabled) {
         setState(() => _mapMessage = 'Bạn cần bật định vị để chỉ đường.');
-        return;
+        return null;
       }
 
       var permission = await Geolocator.checkPermission();
@@ -360,10 +362,12 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         setState(() => _mapMessage = 'Ứng dụng chưa có quyền truy cập vị trí.');
-        return;
+        return null;
       }
 
-      final position = await _resolveCurrentPosition();
+      final position = await _resolveCurrentPosition(
+        allowFallback: allowFallback,
+      );
       final location = LatLng(position.latitude, position.longitude);
       setState(() => _userLocation = location);
       if (moveCamera) {
@@ -372,8 +376,13 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
       if (refreshRoute) {
         await _loadRoute(from: location, moveCamera: _showRoute);
       }
+      return location;
     } catch (e) {
-      setState(() => _mapMessage = 'Không lấy được vị trí hiện tại: $e');
+      setState(() {
+        _mapMessage =
+            'Không lấy được vị trí hiện tại. Trên emulator hãy mở Extended controls > Location rồi Set location.';
+      });
+      return null;
     } finally {
       if (mounted) {
         setState(() => _isLoadingLocation = false);
@@ -381,47 +390,31 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
     }
   }
 
-  Future<Position> _resolveCurrentPosition() async {
-    final lastKnown = await Geolocator.getLastKnownPosition();
-    if (lastKnown != null) {
-      unawaited(_refreshPrecisePosition());
-      return lastKnown;
-    }
-
+  Future<Position> _resolveCurrentPosition({
+    required bool allowFallback,
+  }) async {
     try {
       return await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.best,
-          timeLimit: Duration(seconds: 30),
+        locationSettings: AndroidSettings(
+          accuracy: LocationAccuracy.bestForNavigation,
+          forceLocationManager: true,
+          timeLimit: const Duration(seconds: 20),
         ),
       );
     } on TimeoutException {
+      if (!allowFallback) rethrow;
       return _fallbackPosition(
         'GPS phản hồi chậm, đang dùng vị trí gần nhất để chỉ đường.',
       );
     } catch (_) {
+      if (!allowFallback) rethrow;
+      final lastKnown = await Geolocator.getLastKnownPosition(
+        forceAndroidLocationManager: true,
+      );
+      if (lastKnown != null) return lastKnown;
       return _fallbackPosition(
         'Không lấy được GPS, đang dùng vị trí gần nhất để chỉ đường.',
       );
-    }
-  }
-
-  Future<void> _refreshPrecisePosition() async {
-    try {
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.best,
-          timeLimit: Duration(seconds: 30),
-        ),
-      );
-      if (!mounted) return;
-      final location = LatLng(position.latitude, position.longitude);
-      setState(() => _userLocation = location);
-      if (_showRoute || _navigationActive) {
-        await _loadRoute(from: location, moveCamera: false);
-      }
-    } catch (_) {
-      // GPS can be slow on emulator startup; keep cached/fallback location.
     }
   }
 
@@ -454,7 +447,11 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
 
     final start = _userLocation ?? from;
     if (_userLocation == null) {
-      await _useCurrentLocation(moveCamera: false, refreshRoute: false);
+      final location = await _useCurrentLocation(
+        moveCamera: false,
+        refreshRoute: false,
+      );
+      if (location == null) return;
     }
     await _loadRoute(from: _userLocation ?? start, moveCamera: false);
     setState(() => _showRoute = true);
@@ -462,8 +459,10 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
   }
 
   Future<void> _startNavigation() async {
-    await _useCurrentLocation(moveCamera: false, refreshRoute: false);
-    final start = _userLocation;
+    final start = await _useCurrentLocation(
+      moveCamera: false,
+      refreshRoute: false,
+    );
     if (start == null) return;
     await _loadRoute(from: start, moveCamera: true);
     setState(() {
