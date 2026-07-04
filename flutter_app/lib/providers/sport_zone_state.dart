@@ -46,6 +46,7 @@ class SportZoneState extends ChangeNotifier {
     if (result.isSuccess && result.data != null) {
       currentUser = User.fromJson(result.data as Map<String, dynamic>);
       await fetchCart();
+      await fetchNotifications();
       notifyListeners();
       return true;
     } else {
@@ -70,6 +71,7 @@ class SportZoneState extends ChangeNotifier {
         currentUser = User.fromJson(data['user'] as Map<String, dynamic>);
       }
       await fetchCart();
+      await fetchNotifications();
       notifyListeners();
       return null; // no error
     } else {
@@ -113,6 +115,7 @@ class SportZoneState extends ChangeNotifier {
     await ApiService.logout();
     currentUser = null;
     apiProducts.clear();
+    notifications.clear();
     selectedTabIndex = 0;
     notifyListeners();
   }
@@ -155,6 +158,7 @@ class SportZoneState extends ChangeNotifier {
         currentUser = User.fromJson(data['user'] as Map<String, dynamic>);
       }
       await fetchCart();
+      await fetchNotifications();
       notifyListeners();
       return null; // success
     } else {
@@ -495,19 +499,7 @@ class SportZoneState extends ChangeNotifier {
       if (orderResult.isSuccess) {
         // Clear local cart items because the backend has cleared it
         cartItems.clear();
-
-        // Add a notification for checkout success
-        notifications.insert(
-          0,
-          NotificationItem(
-            title: 'Đơn hàng đã đặt thành công',
-            content:
-                'Cảm ơn $recipientName, đơn đặt hàng ($paymentMethod) đã được ghi nhận thành công!',
-            timeAgo: 'Vừa xong',
-            category: 'DELIVERY',
-            isRead: false,
-          ),
-        );
+        await fetchNotifications();
 
         notifyListeners();
         return ApiResult.success(orderResult.data);
@@ -519,7 +511,22 @@ class SportZoneState extends ChangeNotifier {
     }
   }
 
+  Future<void> fetchNotifications() async {
+    final result = await ApiService.getNotifications();
+    if (result.isSuccess && result.data is List) {
+      notifications
+        ..clear()
+        ..addAll(
+          (result.data as List).whereType<Map<String, dynamic>>().map(
+            NotificationItem.fromJson,
+          ),
+        );
+      notifyListeners();
+    }
+  }
+
   void markAllNotificationsRead() {
+    ApiService.markAllNotificationsRead();
     for (var item in notifications) {
       item.isRead = true;
     }

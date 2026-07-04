@@ -126,7 +126,6 @@ class AlertsScreen extends StatelessWidget {
             _NotificationsHeader(
               unreadCount: unreadCount,
               showUnreadBadge: !isEmpty,
-              showCustomizeHint: isEmpty,
             ),
             if (isEmpty)
               const Expanded(child: _EmptyNotificationsView())
@@ -177,12 +176,10 @@ class AlertsScreen extends StatelessWidget {
 class _NotificationsHeader extends StatelessWidget {
   final int unreadCount;
   final bool showUnreadBadge;
-  final bool showCustomizeHint;
 
   const _NotificationsHeader({
     required this.unreadCount,
     required this.showUnreadBadge,
-    required this.showCustomizeHint,
   });
 
   @override
@@ -237,22 +234,6 @@ class _NotificationsHeader extends StatelessWidget {
                 ),
             ],
           ),
-          if (showCustomizeHint)
-            Container(
-              margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-              decoration: BoxDecoration(
-                color: SportZoneTheme.primary,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                'Customize your notifications!',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: SportZoneTheme.onPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
         ],
       ),
     );
