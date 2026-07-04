@@ -29,6 +29,7 @@ class SportZoneApp extends StatelessWidget {
           '/main': (_) => const MainScreen(),
           '/checkout': (_) => const CheckoutScreen(),
           '/order-status': (_) => const OrderStatusScreen(),
+          '/profile': (_) => const ProfileScreen(),
         },
         onGenerateRoute: (settings) {
           if (settings.name == '/product') {

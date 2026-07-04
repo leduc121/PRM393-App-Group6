@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
-
 
 class SportZoneState extends ChangeNotifier {
   User? currentUser;
@@ -16,7 +14,6 @@ class SportZoneState extends ChangeNotifier {
   int? filterMaxPrice;
   String? filterGender;
   String? filterSize;
-
 
   // API-loaded data
   List<Product> apiProducts = [];
@@ -70,8 +67,6 @@ class SportZoneState extends ChangeNotifier {
       isUser: false,
     ),
   ];
-
-  int _nextCartId = 1;
 
   // ─── Auth Methods (API) ───
 
@@ -153,6 +148,29 @@ class SportZoneState extends ChangeNotifier {
     apiProducts.clear();
     selectedTabIndex = 0;
     notifyListeners();
+  }
+
+  Future<String?> updateProfileAsync({
+    required String fullName,
+    required String phone,
+    String? avatarUrl,
+  }) async {
+    final user = currentUser;
+    if (user == null) return 'Vui lòng đăng nhập lại';
+
+    final result = await ApiService.updateUserProfile(user.uid, {
+      'fullName': fullName,
+      'phone': phone,
+      'avatarUrl': avatarUrl,
+    });
+
+    if (!result.isSuccess) {
+      return result.errorMessage ?? 'Cập nhật profile thất bại';
+    }
+
+    currentUser = User.fromJson(result.data as Map<String, dynamic>);
+    notifyListeners();
+    return null;
   }
 
   Future<String?> verifyOtpAsync(String email, String otp) async {
@@ -290,20 +308,33 @@ class SportZoneState extends ChangeNotifier {
   void selectCategory(String value, {String? categoryId}) {
     selectedCategory = value;
     selectedCategoryId = categoryId;
-    fetchProducts(categoryId: categoryId, brandId: selectedBrandId, minPrice: filterMinPrice, maxPrice: filterMaxPrice, gender: filterGender, size: filterSize);
+    fetchProducts(
+      categoryId: categoryId,
+      brandId: selectedBrandId,
+      minPrice: filterMinPrice,
+      maxPrice: filterMaxPrice,
+      gender: filterGender,
+      size: filterSize,
+    );
   }
 
   void selectBrand(String value, {String? brandId}) {
     selectedBrand = value;
     selectedBrandId = brandId;
-    fetchProducts(categoryId: selectedCategoryId, brandId: brandId, minPrice: filterMinPrice, maxPrice: filterMaxPrice, gender: filterGender, size: filterSize);
+    fetchProducts(
+      categoryId: selectedCategoryId,
+      brandId: brandId,
+      minPrice: filterMinPrice,
+      maxPrice: filterMaxPrice,
+      gender: filterGender,
+      size: filterSize,
+    );
   }
 
-
   void applyFilters({
-    int? minPrice, 
-    int? maxPrice, 
-    String? gender, 
+    int? minPrice,
+    int? maxPrice,
+    String? gender,
     String? size,
     String? categoryName,
     String? categoryId,
@@ -337,7 +368,9 @@ class SportZoneState extends ChangeNotifier {
   void _updateLocalCart(Map<String, dynamic> cartData) {
     final itemsList = cartData['items'] as List<dynamic>? ?? [];
     cartItems.clear();
-    cartItems.addAll(itemsList.map((json) => CartItem.fromJson(json as Map<String, dynamic>)));
+    cartItems.addAll(
+      itemsList.map((json) => CartItem.fromJson(json as Map<String, dynamic>)),
+    );
     notifyListeners();
   }
 
@@ -361,7 +394,8 @@ class SportZoneState extends ChangeNotifier {
       if (targetVariantId == null) {
         final detailResult = await ApiService.getProductDetail(product.id);
         if (!detailResult.isSuccess) {
-          return detailResult.errorMessage ?? 'Không thể tải thông tin sản phẩm';
+          return detailResult.errorMessage ??
+              'Không thể tải thông tin sản phẩm';
         }
 
         final List vList = detailResult.data['variants'] ?? [];
@@ -403,7 +437,10 @@ class SportZoneState extends ChangeNotifier {
       if (quantity <= 0) {
         return deleteCartItem(itemId);
       }
-      final result = await ApiService.updateCartItem(itemId: itemId, quantity: quantity);
+      final result = await ApiService.updateCartItem(
+        itemId: itemId,
+        quantity: quantity,
+      );
       if (result.isSuccess) {
         _updateLocalCart(result.data);
         return null;
@@ -470,7 +507,9 @@ class SportZoneState extends ChangeNotifier {
           isDefault: true,
         );
         if (!createAddrResult.isSuccess) {
-          return ApiResult.error(createAddrResult.errorMessage ?? 'Không thể tạo địa chỉ giao hàng');
+          return ApiResult.error(
+            createAddrResult.errorMessage ?? 'Không thể tạo địa chỉ giao hàng',
+          );
         }
         addressId = createAddrResult.data['addressId']?.toString();
       }
@@ -495,7 +534,8 @@ class SportZoneState extends ChangeNotifier {
           0,
           NotificationItem(
             title: 'Đơn hàng đã đặt thành công',
-            content: 'Cảm ơn $recipientName, đơn đặt hàng ($paymentMethod) đã được ghi nhận thành công!',
+            content:
+                'Cảm ơn $recipientName, đơn đặt hàng ($paymentMethod) đã được ghi nhận thành công!',
             timeAgo: 'Vừa xong',
             category: 'DELIVERY',
             isRead: false,
@@ -530,9 +570,11 @@ class SportZoneState extends ChangeNotifier {
       final raw = result.data;
       if (raw is List) {
         chatMessages.clear();
-        chatMessages.addAll(raw
-            .whereType<Map<String, dynamic>>()
-            .map((json) => ChatMessage.fromJson(json, isCurrentUserAdmin: false)));
+        chatMessages.addAll(
+          raw.whereType<Map<String, dynamic>>().map(
+            (json) => ChatMessage.fromJson(json, isCurrentUserAdmin: false),
+          ),
+        );
         notifyListeners();
       }
     }
@@ -540,7 +582,7 @@ class SportZoneState extends ChangeNotifier {
 
   Future<void> sendChatMessage(String message) async {
     if (message.trim().isEmpty) return;
-    
+
     // Add locally for instant UI update
     chatMessages.add(
       ChatMessage(message: message.trim(), isUser: true, isRead: false),
@@ -558,4 +600,3 @@ class SportZoneState extends ChangeNotifier {
     notifyListeners();
   }
 }
-

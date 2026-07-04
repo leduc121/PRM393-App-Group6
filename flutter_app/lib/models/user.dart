@@ -1,8 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_app/core.dart';
-
-
 class User {
   final String uid;
   final String name;
@@ -32,4 +27,3 @@ class User {
     );
   }
 }
-

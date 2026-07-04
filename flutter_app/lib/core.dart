@@ -30,5 +30,6 @@ export 'screens/product/product_detail_screen.dart';
 export 'screens/checkout/checkout_screen.dart';
 export 'screens/checkout/cart_screen.dart';
 export 'screens/orders/order_status_screen.dart';
+export 'screens/profile/profile_screen.dart';
 
 // export 'screens/main/tabs/notifications_tab.dart'; // We didn't create this file properly if it was missing

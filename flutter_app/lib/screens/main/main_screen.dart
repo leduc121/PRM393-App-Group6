@@ -200,7 +200,10 @@ class _SportZoneFooter extends StatelessWidget {
                     _AccountMenuItem(
                       icon: Icons.person_outline,
                       label: 'Profile',
-                      onTap: () => Navigator.pop(sheetContext),
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        Navigator.pushNamed(context, '/profile');
+                      },
                     ),
                     _AccountMenuItem(
                       icon: Icons.timeline_outlined,
@@ -213,7 +216,10 @@ class _SportZoneFooter extends StatelessWidget {
                     _AccountMenuItem(
                       icon: Icons.settings_outlined,
                       label: 'Settings',
-                      onTap: () => Navigator.pop(sheetContext),
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        Navigator.pushNamed(context, '/profile');
+                      },
                     ),
                     _AccountMenuItem(
                       icon: Icons.help_outline,
