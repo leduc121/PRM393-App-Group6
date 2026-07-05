@@ -114,9 +114,10 @@ class AlertsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<SportZoneState>();
-    final notifications = state.notifications;
+    final notifications = state.visibleNotifications;
     final unreadCount = notifications.where((item) => !item.isRead).length;
     final isEmpty = notifications.isEmpty;
+    final groups = _groupNotifications(notifications);
 
     return Scaffold(
       backgroundColor: SportZoneTheme.background,
@@ -126,49 +127,110 @@ class AlertsScreen extends StatelessWidget {
             _NotificationsHeader(
               unreadCount: unreadCount,
               showUnreadBadge: !isEmpty,
+              onMore: () => _showNotificationActions(context, state),
             ),
             if (isEmpty)
               const Expanded(child: _EmptyNotificationsView())
-            else ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: SportZoneTheme.surface,
-                    foregroundColor: SportZoneTheme.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    side: const BorderSide(
-                      color: SportZoneTheme.primary,
-                      width: 1.5,
-                    ),
-                  ),
-                  onPressed: unreadCount == 0
-                      ? null
-                      : state.markAllNotificationsRead,
-                  child: Text(
-                    'ĐÁNH DẤU TẤT CẢ LÀ ĐÃ ĐỌC',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
+            else
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  itemCount: notifications.length,
-                  itemBuilder: (context, index) {
-                    return _NotificationTile(item: notifications[index]);
-                  },
+                child: ListView(
+                  padding: const EdgeInsets.only(bottom: 18),
+                  children: [
+                    for (final group in groups) ...[
+                      _NotificationSectionHeader(title: group.title),
+                      for (final item in group.items)
+                        _NotificationTile(
+                          item: item,
+                          onDelete: () => state.deleteNotification(item),
+                          onPay: item.isCartReminder
+                              ? () => Navigator.pushNamed(context, '/checkout')
+                              : null,
+                        ),
+                    ],
+                  ],
                 ),
               ),
-            ],
           ],
         ),
       ),
+    );
+  }
+
+  List<_NotificationGroup> _groupNotifications(List<NotificationItem> items) {
+    final today = <NotificationItem>[];
+    final yesterday = <NotificationItem>[];
+    final older = <NotificationItem>[];
+    final now = DateTime.now();
+
+    for (final item in items) {
+      final createdAt = item.createdAt ?? now;
+      if (_isSameDay(createdAt, now)) {
+        today.add(item);
+      } else if (_isSameDay(createdAt, now.subtract(const Duration(days: 1)))) {
+        yesterday.add(item);
+      } else {
+        older.add(item);
+      }
+    }
+
+    return [
+      if (today.isNotEmpty) _NotificationGroup('Today', today),
+      if (yesterday.isNotEmpty) _NotificationGroup('Yesterday', yesterday),
+      if (older.isNotEmpty) _NotificationGroup('This Weekend', older),
+    ];
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    final left = a.toLocal();
+    final right = b.toLocal();
+    return left.year == right.year &&
+        left.month == right.month &&
+        left.day == right.day;
+  }
+
+  void _showNotificationActions(BuildContext context, SportZoneState state) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            decoration: const BoxDecoration(
+              color: SportZoneTheme.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _NotificationSheetAction(
+                  label: 'Clear All',
+                  color: SportZoneTheme.error,
+                  onTap: () {
+                    Navigator.pop(context);
+                    state.clearAllNotifications();
+                  },
+                ),
+                const Divider(height: 1, color: SportZoneTheme.borderSubtle),
+                _NotificationSheetAction(
+                  label: 'Mark all as read',
+                  color: SportZoneTheme.primary,
+                  onTap: () {
+                    Navigator.pop(context);
+                    state.markAllNotificationsRead();
+                  },
+                ),
+                const Divider(height: 8, color: SportZoneTheme.borderSubtle),
+                _NotificationSheetAction(
+                  label: 'Cancel',
+                  color: SportZoneTheme.primary,
+                  fontSize: 20,
+                  onTap: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -176,10 +238,12 @@ class AlertsScreen extends StatelessWidget {
 class _NotificationsHeader extends StatelessWidget {
   final int unreadCount;
   final bool showUnreadBadge;
+  final VoidCallback onMore;
 
   const _NotificationsHeader({
     required this.unreadCount,
     required this.showUnreadBadge,
+    required this.onMore,
   });
 
   @override
@@ -228,13 +292,79 @@ class _NotificationsHeader extends StatelessWidget {
                   ),
                 )
               else
-                IconButton(
-                  icon: const Icon(Icons.settings_outlined),
-                  onPressed: () {},
+                const SizedBox(width: 48),
+              IconButton(
+                icon: const Icon(
+                  Icons.more_vert,
+                  color: SportZoneTheme.primary,
                 ),
+                onPressed: onMore,
+              ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _NotificationGroup {
+  final String title;
+  final List<NotificationItem> items;
+
+  const _NotificationGroup(this.title, this.items);
+}
+
+class _NotificationSectionHeader extends StatelessWidget {
+  final String title;
+
+  const _NotificationSectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: SportZoneTheme.secondary,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationSheetAction extends StatelessWidget {
+  final String label;
+  final Color color;
+  final double fontSize;
+  final VoidCallback onTap;
+
+  const _NotificationSheetAction({
+    required this.label,
+    required this.color,
+    required this.onTap,
+    this.fontSize = 16,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: SizedBox(
+        width: double.infinity,
+        height: 56,
+        child: Center(
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: color,
+              fontSize: fontSize,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -303,89 +433,105 @@ class _EmptyNotificationsView extends StatelessWidget {
 
 class _NotificationTile extends StatelessWidget {
   final NotificationItem item;
+  final VoidCallback onDelete;
+  final VoidCallback? onPay;
 
-  const _NotificationTile({required this.item});
+  const _NotificationTile({
+    required this.item,
+    required this.onDelete,
+    this.onPay,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: item.isRead
-            ? SportZoneTheme.surface
-            : SportZoneTheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(14),
+    return Dismissible(
+      key: ValueKey(item.id ?? '${item.title}-${item.timeAgo}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.only(right: 24),
+        color: SportZoneTheme.error,
+        alignment: Alignment.centerRight,
+        child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: SportZoneTheme.surface,
-              borderRadius: BorderRadius.circular(12),
+      onDismissed: (_) => onDelete(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        color: item.isRead ? SportZoneTheme.surface : const Color(0xFFEAF1FF),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: item.isRead
+                    ? SportZoneTheme.surfaceVariant
+                    : const Color(0xFFD8E5FF),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _categoryIcon(item.category),
+                color: SportZoneTheme.primary,
+              ),
             ),
-            child: Icon(
-              _categoryIcon(item.category),
-              color: SportZoneTheme.primary,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    if (!item.isRead)
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: SportZoneTheme.primary,
-                          shape: BoxShape.circle,
-                        ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: SportZoneTheme.primary,
+                        height: 1.35,
+                        fontWeight: item.isRead
+                            ? FontWeight.w600
+                            : FontWeight.w800,
                       ),
-                    if (!item.isRead) const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        item.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: item.isRead
-                              ? SportZoneTheme.secondary
-                              : SportZoneTheme.primary,
+                      children: [
+                        TextSpan(
+                          text: item.title,
+                          style: const TextStyle(fontWeight: FontWeight.w900),
                         ),
-                      ),
+                        TextSpan(text: ' ${item.content}'),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  item.content,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: SportZoneTheme.secondary,
-                    height: 1.4,
                   ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  item.timeAgo,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: const Color.fromRGBO(93, 95, 95, 0.7),
-                    fontWeight: FontWeight.w900,
+                  const SizedBox(height: 6),
+                  Text(
+                    item.timeAgo,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: SportZoneTheme.secondary,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          if (!item.isRead)
-            Container(width: 4, height: 44, color: SportZoneTheme.electricLime),
-        ],
+            if (onPay != null) ...[
+              const SizedBox(width: 12),
+              SizedBox(
+                height: 40,
+                child: ElevatedButton(
+                  onPressed: onPay,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4F46E5),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                  ),
+                  child: Text(
+                    item.actionLabel ?? 'Pay',
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -395,7 +541,8 @@ class _NotificationTile extends StatelessWidget {
       'PAYMENT' => Icons.payments_outlined,
       'ORDER' => Icons.receipt_long,
       'DELIVERY' => Icons.local_shipping,
-      'PROMO' => Icons.confirmation_number,
+      'PROMO' => Icons.local_offer,
+      'CART' => Icons.shopping_bag_outlined,
       _ => Icons.notifications_outlined,
     };
   }

@@ -26,6 +26,9 @@ class SportZoneState extends ChangeNotifier {
 
   final List<CartItem> cartItems = [];
   final List<NotificationItem> notifications = [];
+  DateTime? _cartUpdatedAt;
+  bool _cartReminderDismissed = false;
+  bool _cartReminderRead = false;
 
   final List<ChatMessage> chatMessages = [
     ChatMessage(
@@ -34,6 +37,26 @@ class SportZoneState extends ChangeNotifier {
       isUser: false,
     ),
   ];
+
+  List<NotificationItem> get visibleNotifications {
+    final items = [...notifications];
+    if (cartItems.isNotEmpty && !_cartReminderDismissed) {
+      items.insert(
+        0,
+        NotificationItem.cartReminder(
+          itemCount: cartItems.fold<int>(0, (sum, item) => sum + item.quantity),
+          createdAt: _cartUpdatedAt,
+          isRead: _cartReminderRead,
+        ),
+      );
+    }
+    items.sort((a, b) {
+      final aDate = a.createdAt ?? DateTime.now();
+      final bDate = b.createdAt ?? DateTime.now();
+      return bDate.compareTo(aDate);
+    });
+    return items;
+  }
 
   // ─── Auth Methods (API) ───
 
@@ -116,6 +139,8 @@ class SportZoneState extends ChangeNotifier {
     currentUser = null;
     apiProducts.clear();
     notifications.clear();
+    _cartReminderDismissed = false;
+    _cartReminderRead = false;
     selectedTabIndex = 0;
     notifyListeners();
   }
@@ -338,10 +363,22 @@ class SportZoneState extends ChangeNotifier {
 
   void _updateLocalCart(Map<String, dynamic> cartData) {
     final itemsList = cartData['items'] as List<dynamic>? ?? [];
+    final hadItems = cartItems.isNotEmpty;
     cartItems.clear();
     cartItems.addAll(
       itemsList.map((json) => CartItem.fromJson(json as Map<String, dynamic>)),
     );
+    if (cartItems.isNotEmpty) {
+      _cartUpdatedAt = DateTime.now();
+      if (!hadItems) {
+        _cartReminderDismissed = false;
+        _cartReminderRead = false;
+      }
+    } else {
+      _cartUpdatedAt = null;
+      _cartReminderDismissed = false;
+      _cartReminderRead = false;
+    }
     notifyListeners();
   }
 
@@ -529,6 +566,29 @@ class SportZoneState extends ChangeNotifier {
     ApiService.markAllNotificationsRead();
     for (var item in notifications) {
       item.isRead = true;
+    }
+    _cartReminderRead = true;
+    notifyListeners();
+  }
+
+  void clearAllNotifications() {
+    ApiService.clearNotifications();
+    notifications.clear();
+    _cartReminderDismissed = true;
+    _cartReminderRead = true;
+    notifyListeners();
+  }
+
+  void deleteNotification(NotificationItem item) {
+    if (item.isCartReminder) {
+      _cartReminderDismissed = true;
+      _cartReminderRead = true;
+    } else {
+      notifications.removeWhere((notification) => notification.id == item.id);
+      final id = item.id;
+      if (id != null && id.isNotEmpty) {
+        ApiService.deleteNotification(id);
+      }
     }
     notifyListeners();
   }

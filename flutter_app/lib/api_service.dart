@@ -755,6 +755,47 @@ class ApiService {
     }
   }
 
+  static Future<ApiResult> deleteNotification(String id) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http
+          .delete(Uri.parse('$baseUrl/notifications/$id'), headers: headers)
+          .timeout(_timeout);
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ApiResult.success(data);
+      } else {
+        final msg = data['message'] ?? 'Không thể xóa thông báo';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi xóa thông báo: $e');
+    }
+  }
+
+  static Future<ApiResult> clearNotifications() async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http
+          .delete(
+            Uri.parse('$baseUrl/notifications/clear-all'),
+            headers: headers,
+          )
+          .timeout(_timeout);
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ApiResult.success(data);
+      } else {
+        final msg = data['message'] ?? 'Không thể xóa tất cả thông báo';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi xóa tất cả thông báo: $e');
+    }
+  }
+
   // ─── Users & Addresses Endpoints ───
 
   static Future<ApiResult> getUserProfile(String uid) async {

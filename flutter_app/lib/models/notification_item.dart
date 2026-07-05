@@ -4,6 +4,8 @@ class NotificationItem {
   final String content;
   final String timeAgo;
   final String category;
+  final DateTime? createdAt;
+  final String? actionLabel;
   bool isRead;
 
   NotificationItem({
@@ -12,6 +14,8 @@ class NotificationItem {
     required this.content,
     required this.timeAgo,
     required this.category,
+    this.createdAt,
+    this.actionLabel,
     this.isRead = false,
   });
 
@@ -23,7 +27,29 @@ class NotificationItem {
       content: (json['body'] ?? json['content'] ?? '').toString(),
       timeAgo: _relativeTime(createdAt),
       category: _categoryFromType(json['type']?.toString()),
+      createdAt: createdAt,
       isRead: json['isRead'] == true || json['is_read'] == true,
+    );
+  }
+
+  bool get isCartReminder => category == 'CART';
+
+  factory NotificationItem.cartReminder({
+    required int itemCount,
+    DateTime? createdAt,
+    bool isRead = false,
+  }) {
+    final timestamp = createdAt ?? DateTime.now();
+    return NotificationItem(
+      id: 'cart-reminder',
+      title: 'Bạn vẫn còn hứng thú với món đồ trong giỏ không?',
+      content:
+          'Giỏ hàng của bạn đang có $itemCount sản phẩm. Thanh toán ngay trước khi sản phẩm hết hàng nhé.',
+      timeAgo: _relativeTime(timestamp),
+      category: 'CART',
+      createdAt: timestamp,
+      actionLabel: 'Pay',
+      isRead: isRead,
     );
   }
 
