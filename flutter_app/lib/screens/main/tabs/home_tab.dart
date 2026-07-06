@@ -1,11 +1,347 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
-import 'package:flutter_app/screens/admin/admin_product_list_screen.dart';
 import 'package:flutter_app/screens/admin/admin_order_list_screen.dart';
 import 'package:flutter_app/screens/admin/admin_chat_list_screen.dart';
-import 'package:flutter_app/screens/checkout/cart_screen.dart';
 import 'dart:async';
+
+Future<void> _showAddToCartVariantSheet(
+  BuildContext context,
+  Product product,
+) async {
+  final state = context.read<SportZoneState>();
+  final messenger = ScaffoldMessenger.of(context);
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const Center(child: CircularProgressIndicator()),
+  );
+
+  final detailResult = await ApiService.getProductDetail(product.id);
+  if (!context.mounted) return;
+  Navigator.of(context).pop();
+
+  if (!detailResult.isSuccess) {
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(detailResult.errorMessage ?? 'Không thể tải phân loại'),
+      ),
+    );
+    return;
+  }
+
+  final rawVariants = detailResult.data['variants'] as List<dynamic>? ?? [];
+  final variants = rawVariants
+      .whereType<Map<String, dynamic>>()
+      .map(ProductVariant.fromJson)
+      .where((variant) => variant.id.isNotEmpty)
+      .toList();
+
+  if (variants.isEmpty) {
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Sản phẩm hiện chưa có phân loại để bán.')),
+    );
+    return;
+  }
+
+  final available = variants.where((variant) => variant.stockQty > 0).toList();
+  if (available.isEmpty) {
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Sản phẩm đã hết hàng.')),
+    );
+    return;
+  }
+
+  if (available.length == 1) {
+    final variant = available.first;
+    final error = await state.addToCart(
+      product,
+      variantId: variant.id,
+      quantity: 1,
+    );
+    if (!context.mounted) return;
+    messenger.showSnackBar(
+      SnackBar(content: Text(error ?? 'Đã thêm vào giỏ hàng')),
+    );
+    return;
+  }
+
+  var selectedColor = available.first.colorName;
+  var selectedSize = available.first.size;
+  var quantity = 1;
+
+  ProductVariant? selectedVariant() {
+    try {
+      return available.firstWhere(
+        (variant) =>
+            variant.colorName == selectedColor && variant.size == selectedSize,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<String> sizesForColor(String color) {
+    return available
+        .where((variant) => variant.colorName == color)
+        .map((variant) => variant.size)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  List<String> colorsForSize(String size) {
+    return available
+        .where((variant) => variant.size == size)
+        .map((variant) => variant.colorName)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  final colors = available.map((variant) => variant.colorName).toSet().toList()
+    ..sort();
+
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return StatefulBuilder(
+        builder: (context, setSheetState) {
+          final sizeOptions = sizesForColor(selectedColor);
+          if (!sizeOptions.contains(selectedSize)) {
+            selectedSize = sizeOptions.first;
+          }
+          final variant = selectedVariant();
+          final stock = variant?.stockQty ?? 0;
+          if (quantity > stock) quantity = stock > 0 ? stock : 1;
+
+          return SafeArea(
+            child: Container(
+              padding: EdgeInsets.fromLTRB(
+                18,
+                14,
+                18,
+                MediaQuery.of(context).viewInsets.bottom + 18,
+              ),
+              decoration: const BoxDecoration(
+                color: SportZoneTheme.surface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: SportZoneTheme.borderSubtle,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: SizedBox(
+                          width: 72,
+                          height: 72,
+                          child: ProductImage(
+                            imageUrl: product.imageUrl,
+                            productName: product.name,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              product.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w900),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              formatVnd(product.price),
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    color: SportZoneTheme.primary,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    'MÀU SẮC',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: colors.map((color) {
+                      final selected = selectedColor == color;
+                      return ChoiceChip(
+                        label: Text(color),
+                        selected: selected,
+                        onSelected: (_) => setSheetState(() {
+                          selectedColor = color;
+                          final nextSizes = sizesForColor(color);
+                          if (!nextSizes.contains(selectedSize)) {
+                            selectedSize = nextSizes.first;
+                          }
+                          quantity = 1;
+                        }),
+                        selectedColor: SportZoneTheme.primary,
+                        labelStyle: TextStyle(
+                          color: selected
+                              ? SportZoneTheme.onPrimary
+                              : SportZoneTheme.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    'KÍCH CỠ',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: sizeOptions.map((size) {
+                      final selected = selectedSize == size;
+                      return ChoiceChip(
+                        label: Text(size),
+                        selected: selected,
+                        onSelected: (_) => setSheetState(() {
+                          selectedSize = size;
+                          final nextColors = colorsForSize(size);
+                          if (!nextColors.contains(selectedColor)) {
+                            selectedColor = nextColors.first;
+                          }
+                          quantity = 1;
+                        }),
+                        selectedColor: SportZoneTheme.primary,
+                        labelStyle: TextStyle(
+                          color: selected
+                              ? SportZoneTheme.onPrimary
+                              : SportZoneTheme.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    stock > 0 ? 'Còn $stock sản phẩm' : 'Hết hàng',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: stock > 0 ? SportZoneTheme.secondary : Colors.red,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: SportZoneTheme.surfaceVariant,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove),
+                              onPressed: quantity <= 1
+                                  ? null
+                                  : () => setSheetState(() => quantity--),
+                            ),
+                            SizedBox(
+                              width: 28,
+                              child: Text(
+                                quantity.toString(),
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.labelLarge
+                                    ?.copyWith(fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add),
+                              onPressed: quantity >= stock
+                                  ? null
+                                  : () => setSheetState(() => quantity++),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: variant == null || stock <= 0
+                                ? null
+                                : () async {
+                                    final error = await state.addToCart(
+                                      product,
+                                      variantId: variant.id,
+                                      quantity: quantity,
+                                    );
+                                    if (!sheetContext.mounted) return;
+                                    Navigator.pop(sheetContext);
+                                    messenger.showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          error ?? 'Đã thêm vào giỏ hàng',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: SportZoneTheme.primary,
+                              foregroundColor: SportZoneTheme.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                            child: const Text(
+                              'THÊM VÀO GIỎ',
+                              style: TextStyle(fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 
 class _ProductCard extends StatelessWidget {
   final Product product;
@@ -13,7 +349,6 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.read<SportZoneState>();
     return Padding(
       padding: const EdgeInsets.only(right: 12),
       child: GestureDetector(
@@ -47,12 +382,7 @@ class _ProductCard extends StatelessWidget {
                   bottom: 8,
                   right: 8,
                   child: GestureDetector(
-                    onTap: () {
-                      state.addToCart(product);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Đã thêm vào giỏ hàng')),
-                      );
-                    },
+                    onTap: () => _showAddToCartVariantSheet(context, product),
                     child: Container(
                       width: 36,
                       height: 36,
@@ -187,8 +517,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<SportZoneState>();
-    final categories = ['Tất cả', ...state.apiCategories.map((c) => c.name)];
-    final brands = ['Tất cả', ...state.apiBrands.map((b) => b.name)];
+    final currentUser = state.currentUser;
+    final avatarUrl = currentUser?.avatarUrl;
+    final isAdmin = currentUser == null
+        ? false
+        : currentUser.role.toUpperCase() == 'ADMIN';
+    final displayName = currentUser?.name ?? 'Khách';
+    final userInitial = currentUser != null && currentUser.name.isNotEmpty
+        ? currentUser.name[0].toUpperCase()
+        : 'U';
 
     final filtered = state.apiProducts;
     final chunks = <List<Product>>[];
@@ -207,18 +544,12 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             CircleAvatar(
               backgroundColor: SportZoneTheme.electricLime,
-              backgroundImage:
-                  state.currentUser?.avatarUrl != null &&
-                      state.currentUser!.avatarUrl!.isNotEmpty
-                  ? NetworkImage(state.currentUser!.avatarUrl!)
+              backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                  ? NetworkImage(avatarUrl)
                   : null,
-              child:
-                  state.currentUser?.avatarUrl == null ||
-                      state.currentUser!.avatarUrl!.isEmpty
+              child: avatarUrl == null || avatarUrl.isEmpty
                   ? Text(
-                      (state.currentUser?.name.isNotEmpty == true)
-                          ? state.currentUser!.name[0].toUpperCase()
-                          : 'U',
+                      userInitial,
                       style: const TextStyle(
                         color: Colors.black,
                         fontWeight: FontWeight.bold,
@@ -231,7 +562,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Chào, ${state.currentUser?.name ?? "Khách"}',
+                  'Chào, $displayName',
                   style: const TextStyle(
                     color: Colors.black,
                     fontSize: 16,
@@ -239,13 +570,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 Text(
-                  state.currentUser?.role?.toUpperCase() == 'ADMIN'
-                      ? 'Quản trị viên'
-                      : 'Thành viên',
+                  isAdmin ? 'Quản trị viên' : 'Thành viên',
                   style: TextStyle(
-                    color: state.currentUser?.role?.toUpperCase() == 'ADMIN'
-                        ? Colors.red
-                        : Colors.grey,
+                    color: isAdmin ? Colors.red : Colors.grey,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -255,7 +582,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
-          if (state.currentUser?.role?.toUpperCase() == 'ADMIN')
+          if (isAdmin)
             TopActionButton(
               icon: Icons.admin_panel_settings_outlined,
               onTap: () => _showAdminMenu(context),
@@ -300,7 +627,10 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.only(bottom: 96),
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -312,27 +642,35 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: TextField(
                           controller: _searchController,
                           onChanged: _onSearchChanged,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                           decoration: InputDecoration(
                             hintText: 'Tìm kiếm sản phẩm...',
-                            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            hintStyle: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
                                   color: SportZoneTheme.secondary,
                                   fontWeight: FontWeight.w600,
                                 ),
-                            prefixIcon: const Icon(Icons.search, color: SportZoneTheme.secondary),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: SportZoneTheme.secondary,
+                            ),
                             suffixIcon: _searchController.text.isNotEmpty
                                 ? GestureDetector(
                                     onTap: () {
                                       _searchController.clear();
                                       _onSearchChanged('');
                                     },
-                                    child: const Icon(Icons.clear, color: SportZoneTheme.secondary),
+                                    child: const Icon(
+                                      Icons.clear,
+                                      color: SportZoneTheme.secondary,
+                                    ),
                                   )
                                 : null,
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                            ),
                           ),
                         ),
                       ),
@@ -354,7 +692,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: SportZoneTheme.primary.withOpacity(0.3),
+                              color: SportZoneTheme.primary.withValues(
+                                alpha: 0.3,
+                              ),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -363,8 +703,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Stack(
                           clipBehavior: Clip.none,
                           children: [
-                            const Icon(Icons.tune, color: SportZoneTheme.onPrimary),
-                            if (state.filterMinPrice != null || state.filterMaxPrice != null || state.filterGender != null || state.filterSize != null || state.selectedCategoryId != null || state.selectedBrandId != null)
+                            const Icon(
+                              Icons.tune,
+                              color: SportZoneTheme.onPrimary,
+                            ),
+                            if (state.filterMinPrice != null ||
+                                state.filterMaxPrice != null ||
+                                state.filterGender != null ||
+                                state.filterSize != null ||
+                                state.selectedCategoryId != null ||
+                                state.selectedBrandId != null)
                               Positioned(
                                 right: -4,
                                 top: -4,
@@ -506,7 +854,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.pop(sheetContext);
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const AdminProductListScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const AdminProductListScreen(),
+                          ),
                         );
                       },
                     ),
@@ -518,7 +868,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.pop(sheetContext);
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const AdminOrderListScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const AdminOrderListScreen(),
+                          ),
                         );
                       },
                     ),
@@ -530,7 +882,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.pop(sheetContext);
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const AdminChatListScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const AdminChatListScreen(),
+                          ),
                         );
                       },
                     ),

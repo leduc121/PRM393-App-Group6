@@ -14,12 +14,21 @@ class ProductVariant {
   });
 
   factory ProductVariant.fromJson(Map<String, dynamic> json) {
+    final rawStock = json['stockQty'] ?? json['stock_qty'] ?? 0;
     return ProductVariant(
-      id: json['variantId']?.toString() ?? json['variant_id']?.toString() ?? json['id']?.toString() ?? '',
-      productId: json['productId']?.toString() ?? json['product_id']?.toString() ?? '',
+      id:
+          json['variantId']?.toString() ??
+          json['variant_id']?.toString() ??
+          json['id']?.toString() ??
+          '',
+      productId:
+          json['productId']?.toString() ?? json['product_id']?.toString() ?? '',
       size: json['size']?.toString() ?? '',
-      colorName: json['colorName']?.toString() ?? json['color_name']?.toString() ?? '',
-      stockQty: (json['stockQty'] ?? json['stock_qty'] ?? 0 as num?)?.toInt() ?? 0,
+      colorName:
+          json['colorName']?.toString() ?? json['color_name']?.toString() ?? '',
+      stockQty: rawStock is num
+          ? rawStock.toInt()
+          : int.tryParse(rawStock.toString()) ?? 0,
     );
   }
 }
