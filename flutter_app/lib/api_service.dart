@@ -542,7 +542,6 @@ class ApiService {
   static Future<ApiResult> createOrder({
     required String addressId,
     required String paymentMethod,
-    int? shippingFee,
     String? note,
     String? voucherId,
   }) async {
@@ -552,7 +551,6 @@ class ApiService {
         'addressId': addressId,
         'paymentMethod': paymentMethod,
       };
-      if (shippingFee != null) body['shippingFee'] = shippingFee;
       if (note != null && note.isNotEmpty) body['note'] = note;
       if (voucherId != null && voucherId.isNotEmpty) body['voucherId'] = voucherId;
 

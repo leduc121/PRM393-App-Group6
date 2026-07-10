@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Ứng dụng cần quyền vị trí để ước tính khoảng cách giao hàng chính xác từ vị trí của bạn đến cửa hàng.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Ứng dụng cần quyền vị trí để ước tính khoảng cách giao hàng chính xác từ vị trí của bạn đến cửa hàng.</string>
 </dict>
 </plist>

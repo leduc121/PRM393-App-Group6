@@ -8,6 +8,7 @@ import 'package:flutter_app/core.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:geolocator/geolocator.dart';
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   static const _mapboxToken =
@@ -199,17 +200,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   Expanded(
                     child: _deliveryModeButton(
                       context,
+                      label: 'Vị trí hiện tại',
+                      icon: Icons.my_location,
+                      selected: deliveryMode == 'gps',
+                      onTap: _getCurrentLocation,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _deliveryModeButton(
+                      context,
                       label: 'Tự nhập',
                       icon: Icons.edit_location_alt,
                       selected: deliveryMode == 'manual',
                       onTap: () => setState(() => deliveryMode = 'manual'),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: _deliveryModeButton(
                       context,
-                      label: 'Chọn trên map',
+                      label: 'Chọn map',
                       icon: Icons.map_outlined,
                       selected: deliveryMode == 'map',
                       onTap: _pickAddressOnMap,
@@ -511,7 +522,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           phone: phoneStr,
                           street: addr,
                           paymentMethod: selectedPayment,
-                          shippingFee: shippingFee,
                           voucherId: selectedVoucher?.id,
                         );
 
@@ -698,6 +708,101 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  Future<void> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vui lòng bật dịch vụ định vị GPS.')),
+        );
+      }
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Quyền định vị bị từ chối.')),
+          );
+        }
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Quyền định vị bị từ chối vĩnh viễn.')),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      calculatingShipping = true;
+      shippingMessage = 'Đang lấy vị trí hiện tại...';
+    });
+
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      final point = LatLng(position.latitude, position.longitude);
+
+      final uri = Uri.parse('https://api.mapbox.com/search/geocode/v6/reverse')
+          .replace(
+            queryParameters: {
+              'longitude': point.longitude.toString(),
+              'latitude': point.latitude.toString(),
+              'language': 'vi',
+              'access_token': _mapboxToken,
+            },
+          );
+
+      final response = await http.get(uri);
+      final data = jsonDecode(response.body);
+      final features = data['features'] as List?;
+
+      if (mounted) {
+        if (features != null && features.isNotEmpty) {
+          final feature = features.first;
+          final placeName = feature['properties']['full_address'] ??
+              feature['properties']['name'] ??
+              '';
+          setState(() {
+            deliveryMode = 'gps';
+            deliveryLocation = point;
+            address.text = placeName;
+            _setShippingFromLocation(point);
+            shippingMessage = 'Đã cập nhật vị trí hiện tại của bạn.';
+          });
+        } else {
+          setState(() {
+            shippingMessage = 'Không thể phân tích vị trí hiện tại.';
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          shippingMessage = 'Lỗi lấy vị trí: $e';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          calculatingShipping = false;
+        });
+      }
+    }
+  }
+
   Future<bool> _ensureShippingCalculated() async {
     if (shippingFee != null) return true;
     await _calculateShippingFromCurrentInput();
@@ -753,13 +858,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   int _shippingFeeForDistance(double km) {
-    const baseFee = 18000;
+    const baseFee = 15000;
     const extraPerKm = 5000;
-    const minFee = 15000;
     const maxFee = 40000;
     final extraKm = km <= 2 ? 0 : (km - 2).ceil();
     final fee = baseFee + extraKm * extraPerKm;
-    return fee.clamp(minFee, maxFee);
+    return fee > maxFee ? maxFee : fee;
   }
 
   Widget _priceRow(
@@ -938,6 +1042,36 @@ class _CheckoutMapPickerScreenState extends State<_CheckoutMapPickerScreen> {
                   ),
                 ],
               ),
+            ),
+          ),
+          Positioned(
+            right: 16,
+            bottom: 160,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'zoom_in',
+                  backgroundColor: SportZoneTheme.surface,
+                  foregroundColor: SportZoneTheme.primary,
+                  onPressed: () {
+                    final currentZoom = _mapController.camera.zoom;
+                    _mapController.move(_mapController.camera.center, currentZoom + 1);
+                  },
+                  child: const Icon(Icons.add),
+                ),
+                const SizedBox(height: 8),
+                FloatingActionButton.small(
+                  heroTag: 'zoom_out',
+                  backgroundColor: SportZoneTheme.surface,
+                  foregroundColor: SportZoneTheme.primary,
+                  onPressed: () {
+                    final currentZoom = _mapController.camera.zoom;
+                    _mapController.move(_mapController.camera.center, currentZoom - 1);
+                  },
+                  child: const Icon(Icons.remove),
+                ),
+              ],
             ),
           ),
         ],

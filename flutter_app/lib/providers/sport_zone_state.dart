@@ -480,7 +480,6 @@ class SportZoneState extends ChangeNotifier {
     required String phone,
     required String street,
     required String paymentMethod,
-    int? shippingFee,
     String? note,
     String? voucherId,
   }) async {
@@ -533,7 +532,6 @@ class SportZoneState extends ChangeNotifier {
       final orderResult = await ApiService.createOrder(
         addressId: addressId,
         paymentMethod: paymentMethod,
-        shippingFee: shippingFee,
         note: note,
         voucherId: voucherId,
       );

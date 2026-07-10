@@ -14,8 +14,7 @@ class CartScreen extends StatelessWidget {
       0,
       (sum, item) => sum + item.price * item.quantity,
     );
-    final shippingFee = items.isEmpty ? 0 : 30000;
-    final total = subtotal + shippingFee;
+    final total = subtotal;
     return Scaffold(
       backgroundColor: SportZoneTheme.background,
       body: SafeArea(
@@ -96,58 +95,10 @@ class CartScreen extends StatelessWidget {
               Expanded(
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 260),
-                  itemCount: items.length + 1,
+                  itemCount: items.length,
                   separatorBuilder: (_, _) =>
                       const Divider(color: SportZoneTheme.borderSubtle),
                   itemBuilder: (context, index) {
-                    if (index == items.length) {
-                      return Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(top: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: SportZoneTheme.surfaceVariant,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 4,
-                              height: 48,
-                              color: SportZoneTheme.electricLime,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'ƯU ĐÃI ĐỘC QUYỀN',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelLarge
-                                        ?.copyWith(
-                                          color: SportZoneTheme.primary,
-                                          fontWeight: FontWeight.w900,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Nhập mã SPORT20 để được giảm giá 20% cho đơn hàng tiếp theo.',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
-                                          color: SportZoneTheme.secondary,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
                     final item = items[index];
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -332,26 +283,6 @@ class CartScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Phí vận chuyển',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: SportZoneTheme.secondary,
-                        ),
-                      ),
-                      Text(
-                        formatVnd(shippingFee),
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Divider(color: SportZoneTheme.borderSubtle),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
