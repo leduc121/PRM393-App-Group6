@@ -558,26 +558,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   : null,
             ),
             const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Chào, $displayName',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Chào, $displayName',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                Text(
-                  isAdmin ? 'Quản trị viên' : 'Thành viên',
-                  style: TextStyle(
-                    color: isAdmin ? Colors.red : Colors.grey,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                  Text(
+                    isAdmin ? 'Quản trị viên' : 'Thành viên',
+                    style: TextStyle(
+                      color: isAdmin ? Colors.red : Colors.grey,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),

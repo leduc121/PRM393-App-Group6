@@ -213,6 +213,15 @@ class _SportZoneFooter extends StatelessWidget {
                         Navigator.pushNamed(context, '/order-status');
                       },
                     ),
+                    if (state.currentUser?.role == 'admin')
+                      _AccountMenuItem(
+                        icon: Icons.confirmation_num_outlined,
+                        label: 'Quản lý Vouchers',
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          Navigator.pushNamed(context, '/admin/vouchers');
+                        },
+                      ),
                     const Divider(height: 1),
                     _AccountMenuItem(
                       icon: Icons.logout,

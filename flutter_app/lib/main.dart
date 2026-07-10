@@ -44,6 +44,17 @@ class SportZoneApp extends StatelessWidget {
               builder: (_) => OtpVerificationScreen(email: email),
             );
           }
+          if (settings.name == '/admin/vouchers') {
+            return MaterialPageRoute(
+              builder: (_) => const VoucherManagementScreen(),
+            );
+          }
+          if (settings.name == '/admin/vouchers/form') {
+            final voucher = settings.arguments as Voucher?;
+            return MaterialPageRoute(
+              builder: (_) => VoucherFormScreen(voucher: voucher),
+            );
+          }
           return null;
         },
       ),

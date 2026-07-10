@@ -544,6 +544,7 @@ class ApiService {
     required String paymentMethod,
     int? shippingFee,
     String? note,
+    String? voucherId,
   }) async {
     try {
       final headers = await _authHeaders();
@@ -553,6 +554,7 @@ class ApiService {
       };
       if (shippingFee != null) body['shippingFee'] = shippingFee;
       if (note != null && note.isNotEmpty) body['note'] = note;
+      if (voucherId != null && voucherId.isNotEmpty) body['voucherId'] = voucherId;
 
       final response = await http.post(
         Uri.parse('$baseUrl/orders'),
@@ -1042,6 +1044,103 @@ class ApiService {
       }
     } catch (e) {
       return ApiResult.error('Lỗi trả lời tin nhắn: $e');
+    }
+  }
+
+  // ─── Voucher Endpoints ───
+
+  static Future<ApiResult> getMyVouchers() async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http
+          .get(Uri.parse('$baseUrl/vouchers/my'), headers: headers)
+          .timeout(_timeout);
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return ApiResult.success(data);
+      } else {
+        final msg = data['message'] ?? 'Không thể tải voucher';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi tải voucher: $e');
+    }
+  }
+
+  static Future<ApiResult> getAllVouchers() async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http
+          .get(Uri.parse('$baseUrl/vouchers/all'), headers: headers)
+          .timeout(_timeout);
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return ApiResult.success(data);
+      } else {
+        final msg = data['message'] ?? 'Không thể tải voucher';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi tải voucher: $e');
+    }
+  }
+
+  static Future<ApiResult> createVoucher(Map<String, dynamic> data) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/vouchers'),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+      final responseData = jsonDecode(response.body);
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return ApiResult.success(responseData);
+      } else {
+        final msg = responseData['message'] ?? 'Tạo voucher thất bại';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi tạo voucher: $e');
+    }
+  }
+
+  static Future<ApiResult> updateVoucher(String id, Map<String, dynamic> data) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.patch(
+        Uri.parse('$baseUrl/vouchers/$id'),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+      final responseData = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return ApiResult.success(responseData);
+      } else {
+        final msg = responseData['message'] ?? 'Cập nhật voucher thất bại';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi cập nhật voucher: $e');
+    }
+  }
+
+  static Future<ApiResult> deleteVoucher(String id) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.delete(
+        Uri.parse('$baseUrl/vouchers/$id'),
+        headers: headers,
+      );
+      final responseData = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return ApiResult.success(responseData);
+      } else {
+        final msg = responseData['message'] ?? 'Xóa voucher thất bại';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi xóa voucher: $e');
     }
   }
 }

@@ -167,26 +167,244 @@ class _ProfileHeader extends StatelessWidget {
             context,
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
         ),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: const Color(0xFFD9A52C),
-            borderRadius: BorderRadius.circular(999),
+        if (user.role.toUpperCase() == 'ADMIN') ...[
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: const Color(0xFFD9A52C),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.workspace_premium, size: 15),
+                const SizedBox(width: 6),
+                Text(
+                  'Admin',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: SportZoneTheme.primary,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+        ],
+        const SizedBox(height: 24),
+        _MembershipCard(user: user),
+        const SizedBox(height: 24),
+        const _VouchersSection(),
+      ],
+    );
+  }
+}
+
+class _MembershipCard extends StatelessWidget {
+  final User user;
+  const _MembershipCard({required this.user});
+
+  Color _getTierColor() {
+    switch (user.membershipTier) {
+      case 'silver': return const Color(0xFFC0C0C0);
+      case 'gold': return const Color(0xFFFFD700);
+      case 'platinum': return const Color(0xFFE5E4E2);
+      default: return const Color(0xFFCD7F32); // Bronze
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final nextTier = user.nextTierName;
+    final progress = user.tierProgress;
+    final color = _getTierColor();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.2),
+            color.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.workspace_premium, size: 15),
-              const SizedBox(width: 6),
               Text(
-                user.role.toUpperCase() == 'ADMIN' ? 'Admin' : 'Customer',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: SportZoneTheme.primary,
-                  fontWeight: FontWeight.w900,
+                'Thành viên',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: SportZoneTheme.secondary,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  user.tierDisplay,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black87,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Đã chi tiêu: ${formatVnd(user.totalSpent)}',
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          ),
+          if (nextTier != null) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: Colors.white54,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+                minHeight: 8,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Còn ${formatVnd(user.nextTierThreshold! - user.totalSpent)} nữa để đạt $nextTier (${(progress * 100).toStringAsFixed(1)}%)',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: SportZoneTheme.secondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 12),
+            const Text(
+              'Bạn đã đạt bậc cao nhất! 💎',
+              style: TextStyle(fontWeight: FontWeight.w700, color: SportZoneTheme.secondary),
+            ),
+          ]
+        ],
+      ),
+    );
+  }
+}
+
+class _VouchersSection extends StatefulWidget {
+  const _VouchersSection();
+  @override
+  State<_VouchersSection> createState() => _VouchersSectionState();
+}
+
+class _VouchersSectionState extends State<_VouchersSection> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SportZoneState>().fetchMyVouchers();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<SportZoneState>();
+    final vouchers = state.availableVouchers;
+
+    if (vouchers.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Voucher của tôi',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: SportZoneTheme.electricLime,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '${vouchers.length}',
+                style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.black),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 110,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: vouchers.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final voucher = vouchers[index];
+              final isUsed = voucher.isUsed;
+              return Container(
+                width: 240,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isUsed ? SportZoneTheme.surfaceVariant : SportZoneTheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isUsed ? SportZoneTheme.borderSubtle : SportZoneTheme.primary.withOpacity(0.1),
+                  ),
+                  boxShadow: isUsed ? null : const [
+                    BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 4)),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          voucher.code,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            color: isUsed ? SportZoneTheme.secondary : SportZoneTheme.primary,
+                            decoration: isUsed ? TextDecoration.lineThrough : null,
+                          ),
+                        ),
+                        if (isUsed)
+                          const Text('ĐÃ DÙNG', style: TextStyle(fontSize: 10, color: SportZoneTheme.error, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      voucher.discountDisplay,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: isUsed ? SportZoneTheme.secondary : const Color(0xFF00C853),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Đơn tối thiểu: ${formatVnd(voucher.minOrderValue)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: SportZoneTheme.secondary),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       ],

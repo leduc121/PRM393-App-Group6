@@ -26,6 +26,7 @@ class SportZoneState extends ChangeNotifier {
 
   final List<CartItem> cartItems = [];
   final List<NotificationItem> notifications = [];
+  final List<Voucher> availableVouchers = [];
   DateTime? _cartUpdatedAt;
   bool _cartReminderDismissed = false;
   bool _cartReminderRead = false;
@@ -481,6 +482,7 @@ class SportZoneState extends ChangeNotifier {
     required String paymentMethod,
     int? shippingFee,
     String? note,
+    String? voucherId,
   }) async {
     if (currentUser == null) {
       return ApiResult.error('Vui lòng đăng nhập để thanh toán');
@@ -533,12 +535,18 @@ class SportZoneState extends ChangeNotifier {
         paymentMethod: paymentMethod,
         shippingFee: shippingFee,
         note: note,
+        voucherId: voucherId,
       );
 
       if (orderResult.isSuccess) {
         // Clear local cart items because the backend has cleared it
         cartItems.clear();
         await fetchNotifications();
+        // Refresh user data to get updated tier/totalSpent
+        final meResult = await ApiService.getMe();
+        if (meResult.isSuccess && meResult.data != null) {
+          currentUser = User.fromJson(meResult.data as Map<String, dynamic>);
+        }
 
         notifyListeners();
         return ApiResult.success(orderResult.data);
@@ -558,6 +566,20 @@ class SportZoneState extends ChangeNotifier {
         ..addAll(
           (result.data as List).whereType<Map<String, dynamic>>().map(
             NotificationItem.fromJson,
+          ),
+        );
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchMyVouchers() async {
+    final result = await ApiService.getMyVouchers();
+    if (result.isSuccess && result.data is List) {
+      availableVouchers
+        ..clear()
+        ..addAll(
+          (result.data as List).whereType<Map<String, dynamic>>().map(
+            (json) => Voucher.fromJson(json),
           ),
         );
       notifyListeners();
