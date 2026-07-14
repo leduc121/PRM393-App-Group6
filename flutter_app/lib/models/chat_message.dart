@@ -27,9 +27,15 @@ class ChatMessage {
       message: json['content'] ?? '',
       isUser: isCurrentUserAdmin ? !isCustomer : isCustomer,
       isRead: json['isRead'] ?? json['is_read'] ?? false,
-      sentAt: json['sentAt'] != null || json['sent_at'] != null 
-          ? DateTime.tryParse((json['sentAt'] ?? json['sent_at']).toString())
-          : null,
+      sentAt: () {
+        final dateStr = (json['sentAt'] ?? json['sent_at'])?.toString();
+        if (dateStr == null) return null;
+        DateTime? dt = DateTime.tryParse(dateStr);
+        if (dt != null && !dt.isUtc && !dateStr.endsWith('Z') && !dateStr.contains('+') && !dateStr.contains('-')) {
+          dt = DateTime.tryParse('${dateStr}Z');
+        }
+        return dt?.toLocal();
+      }(),
     );
   }
 }

@@ -173,50 +173,65 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
 
   Widget _chatBubble(ChatMessage msg) {
     final alignEnd = msg.isUser;
+    
+    String timeStr = '';
+    if (msg.sentAt != null) {
+      final d = msg.sentAt!.day.toString().padLeft(2, '0');
+      final mo = msg.sentAt!.month.toString().padLeft(2, '0');
+      final h = msg.sentAt!.hour.toString().padLeft(2, '0');
+      final m = msg.sentAt!.minute.toString().padLeft(2, '0');
+      timeStr = '$d/$mo $h:$m';
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment:
+            alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           if (!alignEnd)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 10,
-                      backgroundColor: SportZoneTheme.electricLime,
-                      child: Text(
-                        widget.customerName[0].toUpperCase(),
-                        style: const TextStyle(
-                          color: SportZoneTheme.primary,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4, left: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 10,
+                    backgroundColor: SportZoneTheme.electricLime,
+                    child: Text(
+                      widget.customerName.isNotEmpty ? widget.customerName[0].toUpperCase() : 'U',
+                      style: const TextStyle(
+                        color: SportZoneTheme.primary,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      widget.customerName.toUpperCase(),
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w900,
-                          ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-              ],
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    widget.customerName.toUpperCase(),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                ],
+              ),
             ),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: [
-                Container(
+          Row(
+            mainAxisAlignment:
+                alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
+            children: [
+              Flexible(
+                child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: alignEnd ? Colors.black : SportZoneTheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(12),
+                    color: alignEnd ? Colors.black : SportZoneTheme.borderSubtle,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft: Radius.circular(alignEnd ? 16 : 4),
+                      bottomRight: Radius.circular(alignEnd ? 4 : 16),
+                    ),
                   ),
                   child: Text(
                     msg.message,
@@ -225,18 +240,34 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
                         ),
                   ),
                 ),
-                if (alignEnd)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, right: 4),
-                    child: Icon(
+              ),
+            ],
+          ),
+          if (timeStr.isNotEmpty || alignEnd)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, right: 4, left: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (timeStr.isNotEmpty)
+                    Text(
+                      timeStr,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: SportZoneTheme.secondary,
+                            fontSize: 10,
+                          ),
+                    ),
+                  if (alignEnd) ...[
+                    if (timeStr.isNotEmpty) const SizedBox(width: 4),
+                    Icon(
                       msg.isRead ? Icons.done_all : Icons.check,
-                      size: 16,
+                      size: 14,
                       color: msg.isRead ? Colors.blue : SportZoneTheme.secondary,
                     ),
-                  ),
-              ],
+                  ],
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
