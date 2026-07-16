@@ -256,7 +256,7 @@ class _OrderStatusCard extends StatelessWidget {
       case 'cod':
         return 'Thanh toán khi nhận hàng';
       case 'stripe':
-        return 'Đã thanh toán Stripe';
+        return 'Thẻ quốc tế (Stripe)';
       case 'bank_transfer':
         return 'Chuyển khoản';
       case 'e_wallet':

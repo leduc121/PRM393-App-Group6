@@ -555,6 +555,31 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   url,
                                   mode: LaunchMode.inAppBrowserView,
                                 );
+                                
+                                // KIỂM TRA TRẠNG THÁI SAU KHI ĐÓNG WEBVIEW
+                                messenger.showSnackBar(
+                                  const SnackBar(content: Text('Đang xử lý kết quả thanh toán...')),
+                                );
+                                await Future.delayed(const Duration(seconds: 3));
+                                final checkStatus = await ApiService.getOrderById(orderId);
+                                
+                                if (checkStatus.isSuccess && checkStatus.data['status'] == 'pending') {
+                                  // User thoát ra mà chưa thanh toán -> Xóa đơn, hoàn kho, hoàn giỏ hàng
+                                  await ApiService.abandonOrder(orderId);
+                                  if (context.mounted) {
+                                    messenger.showSnackBar(
+                                      const SnackBar(content: Text('Đã hủy thanh toán. Giỏ hàng & kho đã được hoàn lại.')),
+                                    );
+                                  }
+                                  navigator.pushNamedAndRemoveUntil('/main', (route) => route.isFirst);
+                                  return;
+                                } else {
+                                  if (context.mounted) {
+                                    messenger.showSnackBar(
+                                      const SnackBar(content: Text('Thanh toán thành công!')),
+                                    );
+                                  }
+                                }
                               } else {
                                 if (!context.mounted) return;
                                 messenger.showSnackBar(

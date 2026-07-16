@@ -691,6 +691,26 @@ class ApiService {
     }
   }
 
+  static Future<ApiResult> abandonOrder(String id) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.delete(
+        Uri.parse('$baseUrl/orders/$id/abandon'),
+        headers: headers,
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ApiResult.success(data);
+      } else {
+        final msg = data['message'] ?? 'Hủy đơn hàng thất bại';
+        return ApiResult.error(msg is List ? msg.join(', ') : msg.toString());
+      }
+    } catch (e) {
+      return ApiResult.error('Lỗi hủy đơn hàng: $e');
+    }
+  }
+
   static Future<ApiResult> updateOrderStatus(String id, String status) async {
     try {
       final headers = await _authHeaders();
