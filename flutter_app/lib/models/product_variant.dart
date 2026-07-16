@@ -4,6 +4,7 @@ class ProductVariant {
   final String size;
   final String colorName;
   final int stockQty;
+  final String? imageUrl;
 
   ProductVariant({
     required this.id,
@@ -11,6 +12,7 @@ class ProductVariant {
     required this.size,
     required this.colorName,
     required this.stockQty,
+    this.imageUrl,
   });
 
   factory ProductVariant.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class ProductVariant {
       stockQty: rawStock is num
           ? rawStock.toInt()
           : int.tryParse(rawStock.toString()) ?? 0,
+      imageUrl: json['imageUrl']?.toString() ?? json['image_url']?.toString(),
     );
   }
 }

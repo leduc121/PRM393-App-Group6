@@ -329,7 +329,7 @@ class ApiService {
 
   // ─── Admin Product Endpoints ───
 
-  static Future<ApiResult> uploadProductImage(String filePath) async {
+  static Future<ApiResult> uploadProductImage(String filePath, {List<int>? bytes, String? fileName}) async {
     try {
       final headers = await _authHeaders();
       var request = http.MultipartRequest(
@@ -339,7 +339,15 @@ class ApiService {
       if (headers['Authorization'] != null) {
         request.headers['Authorization'] = headers['Authorization']!;
       }
-      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      if (kIsWeb && bytes != null) {
+        request.files.add(http.MultipartFile.fromBytes(
+          'file',
+          bytes,
+          filename: fileName ?? 'upload.png',
+        ));
+      } else {
+        request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      }
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
 

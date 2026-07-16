@@ -595,6 +595,11 @@ class ProductImage extends StatelessWidget {
       }
     }
 
+    if (cleanUrl.startsWith('/')) {
+      final host = ApiService.baseUrl.replaceAll('/api/v1', '');
+      cleanUrl = host + cleanUrl;
+    }
+
     if (kIsWeb && cleanUrl.startsWith('http')) {
       cleanUrl =
           '${ApiService.baseUrl}/products/image-proxy?url=${Uri.encodeComponent(cleanUrl)}';

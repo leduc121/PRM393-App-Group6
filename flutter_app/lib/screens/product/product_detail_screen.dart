@@ -10,11 +10,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   List<ProductVariant> variants = [];
   List<String> availableColors = [];
   List<String> availableSizes = [];
+  int currentImageIndex = 0;
+  final PageController _pageController = PageController();
 
   @override
   void initState() {
     super.initState();
     _fetchDetails();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchDetails() async {
@@ -104,9 +112,108 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         child: SizedBox(
                           width: double.infinity,
                           height: MediaQuery.of(context).size.width * 0.8,
-                          child: ProductImage(
-                            imageUrl: widget.product.imageUrl,
-                            productName: widget.product.name,
+                          child: Builder(
+                            builder: (context) {
+                              final productImages = widget.product.images.isNotEmpty
+                                  ? widget.product.images
+                                  : [widget.product.imageUrl];
+                              return Stack(
+                                children: [
+                                  PageView.builder(
+                                    controller: _pageController,
+                                    itemCount: productImages.length,
+                                    onPageChanged: (index) {
+                                      setState(() {
+                                        currentImageIndex = index;
+                                      });
+                                    },
+                                    itemBuilder: (context, index) {
+                                      return ProductImage(
+                                        imageUrl: productImages[index],
+                                        productName: widget.product.name,
+                                      );
+                                    },
+                                  ),
+                                  if (productImages.length > 1) ...[
+                                    // Dots indicator
+                                    Positioned(
+                                      bottom: 12,
+                                      left: 0,
+                                      right: 0,
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: List.generate(
+                                          productImages.length,
+                                          (index) => Container(
+                                            margin: const EdgeInsets.symmetric(horizontal: 3),
+                                            width: currentImageIndex == index ? 16 : 6,
+                                            height: 6,
+                                            decoration: BoxDecoration(
+                                              color: currentImageIndex == index
+                                                  ? SportZoneTheme.primary
+                                                  : Colors.grey.shade400,
+                                              borderRadius: BorderRadius.circular(3),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    // Left Navigation Arrow Button
+                                    if (currentImageIndex > 0)
+                                      Positioned(
+                                        left: 8,
+                                        top: 0,
+                                        bottom: 0,
+                                        child: Center(
+                                          child: ClipOval(
+                                            child: Material(
+                                              color: Colors.black26,
+                                              child: InkWell(
+                                                onTap: () {
+                                                  _pageController.previousPage(
+                                                    duration: const Duration(milliseconds: 350),
+                                                    curve: Curves.easeInOut,
+                                                  );
+                                                },
+                                                child: const Padding(
+                                                  padding: EdgeInsets.all(10.0),
+                                                  child: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    // Right Navigation Arrow Button
+                                    if (currentImageIndex < productImages.length - 1)
+                                      Positioned(
+                                        right: 8,
+                                        top: 0,
+                                        bottom: 0,
+                                        child: Center(
+                                          child: ClipOval(
+                                            child: Material(
+                                              color: Colors.black26,
+                                              child: InkWell(
+                                                onTap: () {
+                                                  _pageController.nextPage(
+                                                    duration: const Duration(milliseconds: 350),
+                                                    curve: Curves.easeInOut,
+                                                  );
+                                                },
+                                                child: const Padding(
+                                                  padding: EdgeInsets.all(10.0),
+                                                  child: Icon(Icons.arrow_forward_ios, color: Colors.white, size: 18),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ],
+                              );
+                            },
                           ),
                         ),
                       ),
