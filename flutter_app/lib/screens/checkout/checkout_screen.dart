@@ -526,6 +526,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           street: addr,
                           paymentMethod: selectedPayment,
                           voucherId: selectedVoucher?.id,
+                          shippingFee: shippingFee,
+                          deliveryLatitude: deliveryLocation?.latitude,
+                          deliveryLongitude: deliveryLocation?.longitude,
+                          deliveryDistanceKm: deliveryDistanceKm,
                         );
 
                         if (!mounted) return;

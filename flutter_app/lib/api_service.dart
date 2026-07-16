@@ -561,6 +561,10 @@ class ApiService {
     required String paymentMethod,
     String? note,
     String? voucherId,
+    int? shippingFee,
+    double? deliveryLatitude,
+    double? deliveryLongitude,
+    double? deliveryDistanceKm,
   }) async {
     try {
       final headers = await _authHeaders();
@@ -571,6 +575,16 @@ class ApiService {
       if (note != null && note.isNotEmpty) body['note'] = note;
       if (voucherId != null && voucherId.isNotEmpty) {
         body['voucherId'] = voucherId;
+      }
+      if (shippingFee != null) body['shippingFee'] = shippingFee;
+      if (deliveryLatitude != null) {
+        body['deliveryLatitude'] = deliveryLatitude;
+      }
+      if (deliveryLongitude != null) {
+        body['deliveryLongitude'] = deliveryLongitude;
+      }
+      if (deliveryDistanceKm != null) {
+        body['deliveryDistanceKm'] = deliveryDistanceKm;
       }
 
       final response = await http.post(

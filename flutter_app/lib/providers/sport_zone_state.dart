@@ -482,6 +482,10 @@ class SportZoneState extends ChangeNotifier {
     required String paymentMethod,
     String? note,
     String? voucherId,
+    int? shippingFee,
+    double? deliveryLatitude,
+    double? deliveryLongitude,
+    double? deliveryDistanceKm,
   }) async {
     if (currentUser == null) {
       return ApiResult.error('Vui lòng đăng nhập để thanh toán');
@@ -534,6 +538,10 @@ class SportZoneState extends ChangeNotifier {
         paymentMethod: paymentMethod,
         note: note,
         voucherId: voucherId,
+        shippingFee: shippingFee,
+        deliveryLatitude: deliveryLatitude,
+        deliveryLongitude: deliveryLongitude,
+        deliveryDistanceKm: deliveryDistanceKm,
       );
 
       if (orderResult.isSuccess) {
