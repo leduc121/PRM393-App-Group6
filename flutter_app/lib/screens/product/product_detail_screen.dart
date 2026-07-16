@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
+
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   String selectedColor = '';
   String selectedSize = '';
@@ -31,32 +32,40 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (result.isSuccess) {
       final List vList = result.data['variants'] ?? [];
       variants = vList.map((v) => ProductVariant.fromJson(v)).toList();
-      
+
       final colorSet = <String>{};
       final sizeSet = <String>{};
       for (var v in variants) {
         colorSet.add(v.colorName);
         sizeSet.add(v.size);
       }
-      
+
       availableColors = colorSet.toList()..sort();
       availableSizes = sizeSet.toList()..sort();
-      
+
       if (availableColors.isNotEmpty) selectedColor = availableColors.first;
       if (availableSizes.isNotEmpty) selectedSize = availableSizes.first;
-      
+
       _updateStock();
       setState(() => isLoading = false);
     } else {
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.errorMessage ?? 'Lỗi tải chi tiết')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.errorMessage ?? 'Lỗi tải chi tiết')),
+      );
     }
   }
 
   void _updateStock() {
     final variant = variants.firstWhere(
       (v) => v.colorName == selectedColor && v.size == selectedSize,
-      orElse: () => ProductVariant(id: '', productId: '', size: '', colorName: '', stockQty: 0),
+      orElse: () => ProductVariant(
+        id: '',
+        productId: '',
+        size: '',
+        colorName: '',
+        stockQty: 0,
+      ),
     );
     setState(() {
       currentStock = variant.stockQty;
@@ -114,7 +123,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           height: MediaQuery.of(context).size.width * 0.8,
                           child: Builder(
                             builder: (context) {
-                              final productImages = widget.product.images.isNotEmpty
+                              final productImages =
+                                  widget.product.images.isNotEmpty
                                   ? widget.product.images
                                   : [widget.product.imageUrl];
                               return Stack(
@@ -141,18 +151,24 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                       left: 0,
                                       right: 0,
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: List.generate(
                                           productImages.length,
                                           (index) => Container(
-                                            margin: const EdgeInsets.symmetric(horizontal: 3),
-                                            width: currentImageIndex == index ? 16 : 6,
+                                            margin: const EdgeInsets.symmetric(
+                                              horizontal: 3,
+                                            ),
+                                            width: currentImageIndex == index
+                                                ? 16
+                                                : 6,
                                             height: 6,
                                             decoration: BoxDecoration(
                                               color: currentImageIndex == index
                                                   ? SportZoneTheme.primary
                                                   : Colors.grey.shade400,
-                                              borderRadius: BorderRadius.circular(3),
+                                              borderRadius:
+                                                  BorderRadius.circular(3),
                                             ),
                                           ),
                                         ),
@@ -171,13 +187,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                               child: InkWell(
                                                 onTap: () {
                                                   _pageController.previousPage(
-                                                    duration: const Duration(milliseconds: 350),
+                                                    duration: const Duration(
+                                                      milliseconds: 350,
+                                                    ),
                                                     curve: Curves.easeInOut,
                                                   );
                                                 },
                                                 child: const Padding(
                                                   padding: EdgeInsets.all(10.0),
-                                                  child: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                                                  child: Icon(
+                                                    Icons.arrow_back_ios_new,
+                                                    color: Colors.white,
+                                                    size: 18,
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -185,7 +207,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                         ),
                                       ),
                                     // Right Navigation Arrow Button
-                                    if (currentImageIndex < productImages.length - 1)
+                                    if (currentImageIndex <
+                                        productImages.length - 1)
                                       Positioned(
                                         right: 8,
                                         top: 0,
@@ -197,13 +220,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                               child: InkWell(
                                                 onTap: () {
                                                   _pageController.nextPage(
-                                                    duration: const Duration(milliseconds: 350),
+                                                    duration: const Duration(
+                                                      milliseconds: 350,
+                                                    ),
                                                     curve: Curves.easeInOut,
                                                   );
                                                 },
                                                 child: const Padding(
                                                   padding: EdgeInsets.all(10.0),
-                                                  child: Icon(Icons.arrow_forward_ios, color: Colors.white, size: 18),
+                                                  child: Icon(
+                                                    Icons.arrow_forward_ios,
+                                                    color: Colors.white,
+                                                    size: 18,
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -280,7 +309,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 ?.copyWith(fontWeight: FontWeight.w900),
                           ),
                           const SizedBox(height: 10),
-                                            isLoading 
+                          isLoading
                               ? const Padding(
                                   padding: EdgeInsets.symmetric(vertical: 8),
                                   child: CircularProgressIndicator(),
@@ -303,8 +332,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                       },
                                       selectedColor: SportZoneTheme.primary,
                                       labelStyle: TextStyle(
-                                        color: selected ? Colors.white : Colors.black,
-                                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                                        color: selected
+                                            ? Colors.white
+                                            : Colors.black,
+                                        fontWeight: selected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
                                       ),
                                     );
                                   }).toList(),
@@ -332,7 +365,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             ],
                           ),
                           const SizedBox(height: 10),
-                          isLoading 
+                          isLoading
                               ? const Padding(
                                   padding: EdgeInsets.symmetric(vertical: 8),
                                   child: CircularProgressIndicator(),
@@ -356,7 +389,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                           color: selected
                                               ? SportZoneTheme.primary
                                               : SportZoneTheme.surfaceVariant,
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         alignment: Alignment.center,
                                         child: Text(
@@ -378,38 +413,52 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           if (!isLoading) ...[
                             const SizedBox(height: 16),
                             Text(
-                              currentStock > 0 ? 'Số lượng kho: $currentStock' : 'Hết hàng',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: currentStock > 0 ? SportZoneTheme.primary : Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              currentStock > 0
+                                  ? 'Số lượng kho: $currentStock'
+                                  : 'Hết hàng',
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: currentStock > 0
+                                        ? SportZoneTheme.primary
+                                        : Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                             ),
                           ],
                           const SizedBox(height: 24),
                           AccordionItem(
                             title: 'MÔ TẢ SẢN PHẨM',
-                            content: widget.product.description.isNotEmpty 
-                                ? widget.product.description 
+                            content: widget.product.description.isNotEmpty
+                                ? widget.product.description
                                 : 'Chưa có mô tả cho sản phẩm này.',
                           ),
-                          if (widget.product.material != null && widget.product.material!.isNotEmpty)
+                          if (widget.product.material != null &&
+                              widget.product.material!.isNotEmpty)
                             AccordionItem(
                               title: 'CHẤT LIỆU',
                               content: widget.product.material!,
                             ),
-                          if (widget.product.gender != null && widget.product.gender!.isNotEmpty)
+                          if (widget.product.gender != null &&
+                              widget.product.gender!.isNotEmpty)
                             AccordionItem(
                               title: 'GIỚI TÍNH',
-                              content: widget.product.gender == 'men' ? 'Nam' : (widget.product.gender == 'women' ? 'Nữ' : 'Unisex'),
+                              content: widget.product.gender == 'men'
+                                  ? 'Nam'
+                                  : (widget.product.gender == 'women'
+                                        ? 'Nữ'
+                                        : 'Unisex'),
                             ),
-                          if (widget.product.origin != null && widget.product.origin!.isNotEmpty)
+                          if (widget.product.origin != null &&
+                              widget.product.origin!.isNotEmpty)
                             AccordionItem(
                               title: 'XUẤT XỨ',
                               content: widget.product.origin!,
                             ),
                           AccordionItem(
                             title: 'BẢO HÀNH',
-                            content: (widget.product.warrantyInfo != null && widget.product.warrantyInfo!.isNotEmpty)
+                            content:
+                                (widget.product.warrantyInfo != null &&
+                                    widget.product.warrantyInfo!.isNotEmpty)
                                 ? widget.product.warrantyInfo!
                                 : 'Bảo hành chính hãng 6 tháng. Đổi trả miễn phí trong 30 ngày.',
                           ),
@@ -423,22 +472,30 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           SizedBox(
                             height: 220,
                             child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
+                              scrollDirection: Axis.horizontal,
                               itemCount: recommended.length,
                               padding: const EdgeInsets.only(right: 16),
                               itemBuilder: (context, index) {
                                 final product = recommended[index];
                                 return GestureDetector(
                                   onTap: () async {
-                                    final error = await state.addToCart(product);
+                                    final error = await state.addToCart(
+                                      product,
+                                    );
                                     if (!context.mounted) return;
                                     if (error != null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         SnackBar(content: Text(error)),
                                       );
                                     } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Đã thêm vào giỏ hàng')),
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Đã thêm vào giỏ hàng'),
+                                        ),
                                       );
                                     }
                                   },
@@ -562,32 +619,40 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       disabledBackgroundColor: SportZoneTheme.borderSubtle,
                       disabledForegroundColor: SportZoneTheme.secondary,
                     ),
-                     onPressed: (currentStock == 0 || isLoading) ? null : () async {
-                       setState(() => isLoading = true);
-                       final error = await state.addToCart(
-                         widget.product,
-                         size: selectedSize,
-                         color: selectedColor,
-                         quantity: quantity,
-                       );
-                       setState(() => isLoading = false);
-                       if (!context.mounted) return;
-                       if (error != null) {
-                         ScaffoldMessenger.of(context).showSnackBar(
-                           SnackBar(content: Text(error)),
-                         );
-                       } else {
-                         ScaffoldMessenger.of(context).showSnackBar(
-                           const SnackBar(content: Text('Đã thêm vào giỏ hàng')),
-                         );
-                       }
-                     },
+                    onPressed: (currentStock == 0 || isLoading)
+                        ? null
+                        : () async {
+                            setState(() => isLoading = true);
+                            final error = await state.addToCart(
+                              widget.product,
+                              size: selectedSize,
+                              color: selectedColor,
+                              quantity: quantity,
+                            );
+                            setState(() => isLoading = false);
+                            if (!context.mounted) return;
+                            if (error != null) {
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(SnackBar(content: Text(error)));
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Đã thêm vào giỏ hàng'),
+                                ),
+                              );
+                            }
+                          },
                     child: Text(
-                      (currentStock == 0 && !isLoading) ? 'HẾT HÀNG' : 'THÊM VÀO GIỎ HÀNG',
+                      (currentStock == 0 && !isLoading)
+                          ? 'HẾT HÀNG'
+                          : 'THÊM VÀO GIỎ HÀNG',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: (currentStock == 0 || isLoading) ? SportZoneTheme.secondary : SportZoneTheme.onPrimary,
+                        color: (currentStock == 0 || isLoading)
+                            ? SportZoneTheme.secondary
+                            : SportZoneTheme.onPrimary,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -606,74 +671,349 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Bảng Size Tiêu Chuẩn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Bảng Size Tiêu Chuẩn',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Dành cho Nam (Quần/Áo)', style: TextStyle(fontWeight: FontWeight.bold, color: SportZoneTheme.primary)),
+                const Text(
+                  'Dành cho Nam (Quần/Áo)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: SportZoneTheme.primary,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Table(
                   border: TableBorder.all(color: Colors.grey.shade300),
                   children: const [
                     TableRow(
-                      decoration: BoxDecoration(color: SportZoneTheme.surfaceVariant),
+                      decoration: BoxDecoration(
+                        color: SportZoneTheme.surfaceVariant,
+                      ),
                       children: [
-                        Padding(padding: EdgeInsets.all(8.0), child: Text('Size', style: TextStyle(fontWeight: FontWeight.bold))),
-                        Padding(padding: EdgeInsets.all(8.0), child: Text('Chiều cao (cm)', style: TextStyle(fontWeight: FontWeight.bold))),
-                        Padding(padding: EdgeInsets.all(8.0), child: Text('Cân nặng (kg)', style: TextStyle(fontWeight: FontWeight.bold))),
-                      ]
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Size',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Chiều cao (cm)',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Cân nặng (kg)',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
                     ),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('S')), Padding(padding: EdgeInsets.all(8.0), child: Text('160 - 165')), Padding(padding: EdgeInsets.all(8.0), child: Text('50 - 55'))]),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('M')), Padding(padding: EdgeInsets.all(8.0), child: Text('166 - 169')), Padding(padding: EdgeInsets.all(8.0), child: Text('56 - 65'))]),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('L')), Padding(padding: EdgeInsets.all(8.0), child: Text('170 - 174')), Padding(padding: EdgeInsets.all(8.0), child: Text('66 - 75'))]),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('XL')), Padding(padding: EdgeInsets.all(8.0), child: Text('175 - 179')), Padding(padding: EdgeInsets.all(8.0), child: Text('76 - 85'))]),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('XXL')), Padding(padding: EdgeInsets.all(8.0), child: Text('180 - 185')), Padding(padding: EdgeInsets.all(8.0), child: Text('86 - 95'))]),
-                  ]
+                    TableRow(
+                      children: [
+                        Padding(padding: EdgeInsets.all(8.0), child: Text('S')),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('160 - 165'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('50 - 55'),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        Padding(padding: EdgeInsets.all(8.0), child: Text('M')),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('166 - 169'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('56 - 65'),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        Padding(padding: EdgeInsets.all(8.0), child: Text('L')),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('170 - 174'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('66 - 75'),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('XL'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('175 - 179'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('76 - 85'),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('XXL'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('180 - 185'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('86 - 95'),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
-                const Text('Dành cho Nữ (Quần/Áo)', style: TextStyle(fontWeight: FontWeight.bold, color: SportZoneTheme.primary)),
+                const Text(
+                  'Dành cho Nữ (Quần/Áo)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: SportZoneTheme.primary,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Table(
                   border: TableBorder.all(color: Colors.grey.shade300),
                   children: const [
                     TableRow(
-                      decoration: BoxDecoration(color: SportZoneTheme.surfaceVariant),
+                      decoration: BoxDecoration(
+                        color: SportZoneTheme.surfaceVariant,
+                      ),
                       children: [
-                        Padding(padding: EdgeInsets.all(8.0), child: Text('Size', style: TextStyle(fontWeight: FontWeight.bold))),
-                        Padding(padding: EdgeInsets.all(8.0), child: Text('Chiều cao (cm)', style: TextStyle(fontWeight: FontWeight.bold))),
-                        Padding(padding: EdgeInsets.all(8.0), child: Text('Cân nặng (kg)', style: TextStyle(fontWeight: FontWeight.bold))),
-                      ]
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Size',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Chiều cao (cm)',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Cân nặng (kg)',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
                     ),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('S')), Padding(padding: EdgeInsets.all(8.0), child: Text('150 - 155')), Padding(padding: EdgeInsets.all(8.0), child: Text('40 - 45'))]),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('M')), Padding(padding: EdgeInsets.all(8.0), child: Text('156 - 160')), Padding(padding: EdgeInsets.all(8.0), child: Text('46 - 50'))]),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('L')), Padding(padding: EdgeInsets.all(8.0), child: Text('161 - 165')), Padding(padding: EdgeInsets.all(8.0), child: Text('51 - 55'))]),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('XL')), Padding(padding: EdgeInsets.all(8.0), child: Text('166 - 170')), Padding(padding: EdgeInsets.all(8.0), child: Text('56 - 60'))]),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('XXL')), Padding(padding: EdgeInsets.all(8.0), child: Text('171 - 175')), Padding(padding: EdgeInsets.all(8.0), child: Text('61 - 65'))]),
-                  ]
+                    TableRow(
+                      children: [
+                        Padding(padding: EdgeInsets.all(8.0), child: Text('S')),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('150 - 155'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('40 - 45'),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        Padding(padding: EdgeInsets.all(8.0), child: Text('M')),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('156 - 160'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('46 - 50'),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        Padding(padding: EdgeInsets.all(8.0), child: Text('L')),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('161 - 165'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('51 - 55'),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('XL'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('166 - 170'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('56 - 60'),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('XXL'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('171 - 175'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('61 - 65'),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
-                const Text('Giày Thể Thao (Unisex)', style: TextStyle(fontWeight: FontWeight.bold, color: SportZoneTheme.primary)),
+                const Text(
+                  'Giày Thể Thao (Unisex)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: SportZoneTheme.primary,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Table(
                   border: TableBorder.all(color: Colors.grey.shade300),
                   children: const [
                     TableRow(
-                      decoration: BoxDecoration(color: SportZoneTheme.surfaceVariant),
+                      decoration: BoxDecoration(
+                        color: SportZoneTheme.surfaceVariant,
+                      ),
                       children: [
-                        Padding(padding: EdgeInsets.all(8.0), child: Text('Size', style: TextStyle(fontWeight: FontWeight.bold))),
-                        Padding(padding: EdgeInsets.all(8.0), child: Text('Chiều dài chân (cm)', style: TextStyle(fontWeight: FontWeight.bold))),
-                      ]
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Size',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Chiều dài chân (cm)',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
                     ),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('38')), Padding(padding: EdgeInsets.all(8.0), child: Text('23.5 - 24.0'))]),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('39')), Padding(padding: EdgeInsets.all(8.0), child: Text('24.1 - 24.5'))]),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('40')), Padding(padding: EdgeInsets.all(8.0), child: Text('24.6 - 25.0'))]),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('41')), Padding(padding: EdgeInsets.all(8.0), child: Text('25.1 - 25.5'))]),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('42')), Padding(padding: EdgeInsets.all(8.0), child: Text('25.6 - 26.0'))]),
-                    TableRow(children: [Padding(padding: EdgeInsets.all(8.0), child: Text('43')), Padding(padding: EdgeInsets.all(8.0), child: Text('26.1 - 26.5'))]),
-                  ]
+                    TableRow(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('38'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('23.5 - 24.0'),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('39'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('24.1 - 24.5'),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('40'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('24.6 - 25.0'),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('41'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('25.1 - 25.5'),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('42'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('25.6 - 26.0'),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('43'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text('26.1 - 26.5'),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -681,7 +1021,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('ĐÓNG', style: TextStyle(fontWeight: FontWeight.bold, color: SportZoneTheme.primary)),
+              child: const Text(
+                'ĐÓNG',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: SportZoneTheme.primary,
+                ),
+              ),
             ),
           ],
         );

@@ -16,7 +16,7 @@ class AdminProductFormScreen extends StatefulWidget {
 
 class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   late TextEditingController _nameCtrl;
   late TextEditingController _shortDescCtrl;
   late TextEditingController _descCtrl;
@@ -45,9 +45,17 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     _nameCtrl = TextEditingController(text: p?.name ?? '');
     _shortDescCtrl = TextEditingController(text: p?.shortDescription ?? '');
     _descCtrl = TextEditingController(text: p?.description ?? '');
-    _priceCtrl = TextEditingController(text: p?.originalPrice?.toString() ?? p?.price.toString() ?? '');
-    _salePriceCtrl = TextEditingController(text: p?.originalPrice != null ? p?.price.toString() : '');
-    _imageCtrl = TextEditingController(text: p?.imageUrl != 'https://via.placeholder.com/300x300?text=No+Image' ? p?.imageUrl : '');
+    _priceCtrl = TextEditingController(
+      text: p?.originalPrice?.toString() ?? p?.price.toString() ?? '',
+    );
+    _salePriceCtrl = TextEditingController(
+      text: p?.originalPrice != null ? p?.price.toString() : '',
+    );
+    _imageCtrl = TextEditingController(
+      text: p?.imageUrl != 'https://via.placeholder.com/300x300?text=No+Image'
+          ? p?.imageUrl
+          : '',
+    );
     _materialCtrl = TextEditingController(text: p?.material ?? '');
     _originCtrl = TextEditingController(text: p?.origin ?? '');
     _warrantyCtrl = TextEditingController(text: p?.warrantyInfo ?? '');
@@ -59,10 +67,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
 
     if (p != null && p.images.length > 1) {
       for (int i = 1; i < p.images.length; i++) {
-        _subImages.add({
-          'url': p.images[i],
-          'file': null,
-        });
+        _subImages.add({'url': p.images[i], 'file': null});
       }
     }
 
@@ -92,17 +97,24 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
       final data = result.data;
       setState(() {
         _nameCtrl.text = data['name']?.toString() ?? '';
-        _shortDescCtrl.text = data['shortDescription']?.toString() ?? data['short_description']?.toString() ?? '';
+        _shortDescCtrl.text =
+            data['shortDescription']?.toString() ??
+            data['short_description']?.toString() ??
+            '';
         _descCtrl.text = data['description']?.toString() ?? '';
         _priceCtrl.text = data['price']?.toString() ?? '';
         _salePriceCtrl.text = data['salePrice']?.toString() ?? '';
-        _imageCtrl.text = (data['images'] is List && (data['images'] as List).isNotEmpty)
+        _imageCtrl.text =
+            (data['images'] is List && (data['images'] as List).isNotEmpty)
             ? (data['images'] as List).first.toString()
             : '';
         _materialCtrl.text = data['material']?.toString() ?? '';
         _originCtrl.text = data['origin']?.toString() ?? '';
-        _warrantyCtrl.text = data['warrantyInfo']?.toString() ?? data['warranty_info']?.toString() ?? '';
-        
+        _warrantyCtrl.text =
+            data['warrantyInfo']?.toString() ??
+            data['warranty_info']?.toString() ??
+            '';
+
         _selectedCategoryId = data['categoryId'] ?? data['category_id'];
         _selectedBrandId = data['brandId'] ?? data['brand_id'];
         _gender = data['gender']?.toString() ?? 'unisex';
@@ -111,10 +123,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
         if (data['images'] is List && (data['images'] as List).length > 1) {
           final list = data['images'] as List;
           for (int i = 1; i < list.length; i++) {
-            _subImages.add({
-              'url': list[i].toString(),
-              'file': null,
-            });
+            _subImages.add({'url': list[i].toString(), 'file': null});
           }
         }
 
@@ -132,8 +141,11 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
       });
     } else {
       setState(() => _isLoading = false);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi tải chi tiết sản phẩm: ${result.errorMessage}')),
+        SnackBar(
+          content: Text('Lỗi tải chi tiết sản phẩm: ${result.errorMessage}'),
+        ),
       );
     }
   }
@@ -156,7 +168,9 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategoryId == null || _selectedBrandId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn Danh mục và Thương hiệu')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn Danh mục và Thương hiệu')),
+      );
       return;
     }
 
@@ -164,12 +178,19 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
 
     String finalBrandId = _selectedBrandId!;
     if (_selectedBrandId == 'OTHER') {
-      final brandResult = await ApiService.createBrand(_customBrandName!.trim());
+      final brandResult = await ApiService.createBrand(
+        _customBrandName!.trim(),
+      );
       if (brandResult.isSuccess) {
         finalBrandId = brandResult.data['brandId'];
       } else {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi tạo thương hiệu: ${brandResult.errorMessage}')));
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi tạo thương hiệu: ${brandResult.errorMessage}'),
+          ),
+        );
         return;
       }
     }
@@ -187,7 +208,12 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
         mainImageUrl = uploadResult.data['url'];
       } else {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi upload ảnh chính: ${uploadResult.errorMessage}')));
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi upload ảnh chính: ${uploadResult.errorMessage}'),
+          ),
+        );
         return;
       }
     } else {
@@ -195,10 +221,15 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     }
 
     // Clean localhost prefix if present to keep DB relative
-    if (mainImageUrl.startsWith('http://localhost:3000/api/v1/products/uploads/')) {
+    if (mainImageUrl.startsWith(
+      'http://localhost:3000/api/v1/products/uploads/',
+    )) {
       mainImageUrl = mainImageUrl.replaceAll('http://localhost:3000', '');
     } else if (mainImageUrl.startsWith('http://127.0.0.1:3000/uploads/')) {
-      mainImageUrl = mainImageUrl.replaceAll('http://127.0.0.1:3000', '/api/v1/products');
+      mainImageUrl = mainImageUrl.replaceAll(
+        'http://127.0.0.1:3000',
+        '/api/v1/products',
+      );
     }
 
     // 2. Upload sub images if picked from local
@@ -216,15 +247,26 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
           finalSubUrls.add(uploadResult.data['url']);
         } else {
           setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi upload ảnh phụ: ${uploadResult.errorMessage}')));
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi upload ảnh phụ: ${uploadResult.errorMessage}'),
+            ),
+          );
           return;
         }
-      } else if (sub['url'] != null && sub['url'].toString().trim().isNotEmpty) {
+      } else if (sub['url'] != null &&
+          sub['url'].toString().trim().isNotEmpty) {
         var urlStr = sub['url'].toString().trim();
-        if (urlStr.startsWith('http://localhost:3000/api/v1/products/uploads/')) {
+        if (urlStr.startsWith(
+          'http://localhost:3000/api/v1/products/uploads/',
+        )) {
           urlStr = urlStr.replaceAll('http://localhost:3000', '');
         } else if (urlStr.startsWith('http://127.0.0.1:3000/uploads/')) {
-          urlStr = urlStr.replaceAll('http://127.0.0.1:3000', '/api/v1/products');
+          urlStr = urlStr.replaceAll(
+            'http://127.0.0.1:3000',
+            '/api/v1/products',
+          );
         }
         finalSubUrls.add(urlStr);
       }
@@ -244,17 +286,23 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
       'shortDescription': _shortDescCtrl.text.trim(),
       'description': _descCtrl.text.trim(),
       'price': int.parse(_priceCtrl.text),
-      'salePrice': _salePriceCtrl.text.isNotEmpty ? int.parse(_salePriceCtrl.text) : null,
+      'salePrice': _salePriceCtrl.text.isNotEmpty
+          ? int.parse(_salePriceCtrl.text)
+          : null,
       'images': finalImages,
       'material': _materialCtrl.text.trim(),
       'gender': _gender,
       'origin': _originCtrl.text.trim(),
       'warrantyInfo': _warrantyCtrl.text.trim(),
-      'variants': _variants.map((v) => {
-        'size': v['size'],
-        'colorName': v['colorName'],
-        'stockQty': v['stockQty'],
-      }).toList(),
+      'variants': _variants
+          .map(
+            (v) => {
+              'size': v['size'],
+              'colorName': v['colorName'],
+              'stockQty': v['stockQty'],
+            },
+          )
+          .toList(),
     };
 
     ApiResult result;
@@ -270,7 +318,13 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
 
     if (result.isSuccess) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(widget.product == null ? 'Thêm mới thành công!' : 'Cập nhật thành công!')),
+        SnackBar(
+          content: Text(
+            widget.product == null
+                ? 'Thêm mới thành công!'
+                : 'Cập nhật thành công!',
+          ),
+        ),
       );
       context.read<SportZoneState>().fetchProducts();
       Navigator.pop(context);
@@ -281,6 +335,28 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     }
   }
 
+  Widget _responsiveTwoColumnRow({
+    required Widget first,
+    required Widget second,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 430) {
+          return Column(children: [first, const SizedBox(height: 16), second]);
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: first),
+            const SizedBox(width: 16),
+            Expanded(child: second),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<SportZoneState>();
@@ -289,7 +365,10 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(isEditing ? 'Sửa Sản phẩm' : 'Thêm Sản phẩm', style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          isEditing ? 'Sửa Sản phẩm' : 'Thêm Sản phẩm',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -305,83 +384,131 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                   children: [
                     TextFormField(
                       controller: _nameCtrl,
-                      decoration: const InputDecoration(labelText: 'Tên sản phẩm (*)', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'Tên sản phẩm (*)',
+                        border: OutlineInputBorder(),
+                      ),
                       validator: (v) => v!.isEmpty ? 'Vui lòng nhập tên' : null,
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(labelText: 'Danh mục (*)', border: OutlineInputBorder()),
-                            value: _selectedCategoryId,
-                            items: state.apiCategories.map((c) => DropdownMenuItem(value: c.categoryId, child: Text(c.name))).toList(),
-                            onChanged: (v) => setState(() => _selectedCategoryId = v),
-                          ),
+                    _responsiveTwoColumnRow(
+                      first: DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Danh mục (*)',
+                          border: OutlineInputBorder(),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              DropdownButtonFormField<String>(
-                                decoration: const InputDecoration(labelText: 'Thương hiệu (*)', border: OutlineInputBorder()),
-                                value: _selectedBrandId,
-                                items: [
-                                  ...state.apiBrands.map((b) => DropdownMenuItem(value: b.brandId, child: Text(b.name))),
-                                  const DropdownMenuItem(value: 'OTHER', child: Text('Khác... (Thêm mới)')),
-                                ],
-                                onChanged: (v) => setState(() => _selectedBrandId = v),
-                              ),
-                              if (_selectedBrandId == 'OTHER') ...[
-                                const SizedBox(height: 8),
-                                TextFormField(
-                                  decoration: const InputDecoration(labelText: 'Tên thương hiệu mới (*)', border: OutlineInputBorder()),
-                                  onChanged: (v) => _customBrandName = v,
-                                  validator: (v) => (_selectedBrandId == 'OTHER' && (v == null || v.trim().isEmpty)) ? 'Vui lòng nhập tên' : null,
+                        initialValue: _selectedCategoryId,
+                        items: state.apiCategories
+                            .map(
+                              (c) => DropdownMenuItem(
+                                value: c.categoryId,
+                                child: Text(
+                                  c.name,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ],
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (v) =>
+                            setState(() => _selectedCategoryId = v),
+                      ),
+                      second: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          DropdownButtonFormField<String>(
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Thương hiệu (*)',
+                              border: OutlineInputBorder(),
+                            ),
+                            initialValue: _selectedBrandId,
+                            items: [
+                              ...state.apiBrands.map(
+                                (b) => DropdownMenuItem(
+                                  value: b.brandId,
+                                  child: Text(
+                                    b.name,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                              const DropdownMenuItem(
+                                value: 'OTHER',
+                                child: Text(
+                                  'Khác... (Thêm mới)',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
+                            onChanged: (v) =>
+                                setState(() => _selectedBrandId = v),
                           ),
-                        ),
-                      ],
+                          if (_selectedBrandId == 'OTHER') ...[
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              decoration: const InputDecoration(
+                                labelText: 'Tên thương hiệu mới (*)',
+                                border: OutlineInputBorder(),
+                              ),
+                              onChanged: (v) => _customBrandName = v,
+                              validator: (v) =>
+                                  (_selectedBrandId == 'OTHER' &&
+                                      (v == null || v.trim().isEmpty))
+                                  ? 'Vui lòng nhập tên'
+                                  : null,
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _priceCtrl,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'Giá gốc (VNĐ) (*)', border: OutlineInputBorder()),
-                            validator: (v) => v!.isEmpty ? 'Vui lòng nhập giá' : null,
-                          ),
+                    _responsiveTwoColumnRow(
+                      first: TextFormField(
+                        controller: _priceCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Giá gốc (VNĐ) (*)',
+                          border: OutlineInputBorder(),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _salePriceCtrl,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'Giá KM (Nếu có)', border: OutlineInputBorder()),
-                          ),
+                        validator: (v) =>
+                            v!.isEmpty ? 'Vui lòng nhập giá' : null,
+                      ),
+                      second: TextFormField(
+                        controller: _salePriceCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Giá KM (Nếu có)',
+                          border: OutlineInputBorder(),
                         ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(labelText: 'Giới tính', border: OutlineInputBorder()),
-                      value: _gender,
+                      decoration: const InputDecoration(
+                        labelText: 'Giới tính',
+                        border: OutlineInputBorder(),
+                      ),
+                      initialValue: _gender,
                       items: const [
                         DropdownMenuItem(value: 'men', child: Text('Nam')),
                         DropdownMenuItem(value: 'women', child: Text('Nữ')),
-                        DropdownMenuItem(value: 'unisex', child: Text('Unisex')),
+                        DropdownMenuItem(
+                          value: 'unisex',
+                          child: Text('Unisex'),
+                        ),
                       ],
                       onChanged: (v) => setState(() => _gender = v!),
                     ),
                     const SizedBox(height: 16),
                     // --- 1. Ảnh chính (Main Image) ---
-                    const Text('Ảnh chính (*)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const Text(
+                      'Ảnh chính (*)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -405,7 +532,9 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                         ElevatedButton.icon(
                           onPressed: () async {
                             final picker = ImagePicker();
-                            final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                            final pickedFile = await picker.pickImage(
+                              source: ImageSource.gallery,
+                            );
                             if (pickedFile != null) {
                               setState(() {
                                 _mainImageFile = pickedFile;
@@ -418,7 +547,8 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                         ),
                       ],
                     ),
-                    if (_mainImageFile != null || _imageCtrl.text.isNotEmpty) ...[
+                    if (_mainImageFile != null ||
+                        _imageCtrl.text.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
@@ -427,9 +557,19 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                           height: 100,
                           child: _mainImageFile != null
                               ? (kIsWeb
-                                  ? Image.network(_mainImageFile!.path, fit: BoxFit.cover)
-                                  : Image.file(File(_mainImageFile!.path), fit: BoxFit.cover))
-                              : Image.network(_resolveImageUrl(_imageCtrl.text), fit: BoxFit.cover, errorBuilder: (c, e, s) => const SizedBox()),
+                                    ? Image.network(
+                                        _mainImageFile!.path,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Image.file(
+                                        File(_mainImageFile!.path),
+                                        fit: BoxFit.cover,
+                                      ))
+                              : Image.network(
+                                  _resolveImageUrl(_imageCtrl.text),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (c, e, s) => const SizedBox(),
+                                ),
                         ),
                       ),
                     ],
@@ -437,7 +577,13 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                     const SizedBox(height: 24),
 
                     // --- 2. Ảnh phụ (Sub Images) ---
-                    const Text('Ảnh phụ (Ảnh chi tiết sản phẩm)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const Text(
+                      'Ảnh phụ (Ảnh chi tiết sản phẩm)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     ..._subImages.asMap().entries.map((entry) {
                       final index = entry.key;
@@ -448,12 +594,20 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                           children: [
                             Expanded(
                               child: TextFormField(
-                                key: ValueKey('sub-img-$index-${item['file']?.name ?? ''}'),
-                                initialValue: item['file'] != null ? item['file']!.name : (item['url']?.toString() ?? ''),
+                                key: ValueKey(
+                                  'sub-img-$index-${item['file']?.name ?? ''}',
+                                ),
+                                initialValue: item['file'] != null
+                                    ? item['file']!.name
+                                    : (item['url']?.toString() ?? ''),
                                 decoration: const InputDecoration(
-                                  labelText: 'URL Ảnh phụ hoặc chọn file từ máy',
+                                  labelText:
+                                      'URL Ảnh phụ hoặc chọn file từ máy',
                                   border: OutlineInputBorder(),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 8,
+                                  ),
                                 ),
                                 onChanged: (v) {
                                   item['url'] = v.trim();
@@ -469,7 +623,9 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                             ElevatedButton.icon(
                               onPressed: () async {
                                 final picker = ImagePicker();
-                                final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                                final pickedFile = await picker.pickImage(
+                                  source: ImageSource.gallery,
+                                );
                                 if (pickedFile != null) {
                                   setState(() {
                                     _subImages[index]['file'] = pickedFile;
@@ -477,12 +633,22 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                                 }
                               },
                               icon: const Icon(Icons.image, size: 16),
-                              label: const Text('Chọn ảnh phụ', style: TextStyle(fontSize: 12)),
+                              label: const Text(
+                                'Chọn ảnh phụ',
+                                style: TextStyle(fontSize: 12),
+                              ),
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
                               ),
                             ),
-                            if (item['file'] != null || (item['url'] != null && item['url'].toString().trim().isNotEmpty)) ...[
+                            if (item['file'] != null ||
+                                (item['url'] != null &&
+                                    item['url']
+                                        .toString()
+                                        .trim()
+                                        .isNotEmpty)) ...[
                               const SizedBox(width: 8),
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
@@ -491,22 +657,38 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                                   height: 40,
                                   child: item['file'] != null
                                       ? (kIsWeb
-                                          ? Image.network(item['file']!.path, fit: BoxFit.cover)
-                                          : Image.file(File(item['file']!.path), fit: BoxFit.cover))
-                                      : Image.network(_resolveImageUrl(item['url'].toString()), fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.error, size: 16)),
+                                            ? Image.network(
+                                                item['file']!.path,
+                                                fit: BoxFit.cover,
+                                              )
+                                            : Image.file(
+                                                File(item['file']!.path),
+                                                fit: BoxFit.cover,
+                                              ))
+                                      : Image.network(
+                                          _resolveImageUrl(
+                                            item['url'].toString(),
+                                          ),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (c, e, s) =>
+                                              const Icon(Icons.error, size: 16),
+                                        ),
                                 ),
                               ),
                             ],
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => setState(() => _subImages.removeAt(index)),
+                              onPressed: () =>
+                                  setState(() => _subImages.removeAt(index)),
                             ),
                           ],
                         ),
                       );
                     }),
                     TextButton.icon(
-                      onPressed: () => setState(() => _subImages.add({'url': '', 'file': null})),
+                      onPressed: () => setState(
+                        () => _subImages.add({'url': '', 'file': null}),
+                      ),
                       icon: const Icon(Icons.add),
                       label: const Text('Thêm ảnh phụ'),
                     ),
@@ -514,31 +696,52 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                     TextFormField(
                       controller: _shortDescCtrl,
                       maxLines: 2,
-                      decoration: const InputDecoration(labelText: 'Mô tả ngắn gọn', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'Mô tả ngắn gọn',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _descCtrl,
                       maxLines: 4,
-                      decoration: const InputDecoration(labelText: 'Mô tả chi tiết', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'Mô tả chi tiết',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _materialCtrl,
-                      decoration: const InputDecoration(labelText: 'Chất liệu', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'Chất liệu',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _originCtrl,
-                      decoration: const InputDecoration(labelText: 'Xuất xứ', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'Xuất xứ',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _warrantyCtrl,
-                      decoration: const InputDecoration(labelText: 'Thông tin bảo hành', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'Thông tin bảo hành',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    const Text('Tùy chọn Sản phẩm (Size & Màu)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const Text(
+                      'Tùy chọn Sản phẩm (Size & Màu)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     ..._variants.asMap().entries.map((entry) {
                       final index = entry.key;
@@ -550,24 +753,90 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                             Expanded(
                               flex: 2,
                               child: DropdownButtonFormField<String>(
-                                decoration: const InputDecoration(labelText: 'Size', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 8)),
-                                value: variant['size'],
-                                items: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'FREE']
-                                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                                    .toList(),
-                                onChanged: (v) => setState(() => _variants[index]['size'] = v),
+                                decoration: const InputDecoration(
+                                  labelText: 'Size',
+                                  border: OutlineInputBorder(),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
+                                ),
+                                initialValue: variant['size'],
+                                items:
+                                    [
+                                          'XS',
+                                          'S',
+                                          'M',
+                                          'L',
+                                          'XL',
+                                          'XXL',
+                                          'XXXL',
+                                          'FREE',
+                                        ]
+                                        .map(
+                                          (s) => DropdownMenuItem(
+                                            value: s,
+                                            child: Text(s),
+                                          ),
+                                        )
+                                        .toList(),
+                                onChanged: (v) => setState(
+                                  () => _variants[index]['size'] = v,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               flex: 3,
                               child: DropdownButtonFormField<String>(
-                                decoration: const InputDecoration(labelText: 'Màu', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 8)),
-                                value: ['Đen', 'Trắng', 'Đỏ', 'Xanh dương', 'Xanh lá', 'Vàng', 'Cam', 'Xám', 'Nâu', 'Hồng', 'Tím', 'Khác'].contains(variant['colorName']) ? variant['colorName'] : 'Đen',
-                                items: ['Đen', 'Trắng', 'Đỏ', 'Xanh dương', 'Xanh lá', 'Vàng', 'Cam', 'Xám', 'Nâu', 'Hồng', 'Tím', 'Khác']
-                                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                                    .toList(),
-                                onChanged: (v) => setState(() => _variants[index]['colorName'] = v),
+                                decoration: const InputDecoration(
+                                  labelText: 'Màu',
+                                  border: OutlineInputBorder(),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
+                                ),
+                                initialValue:
+                                    [
+                                      'Đen',
+                                      'Trắng',
+                                      'Đỏ',
+                                      'Xanh dương',
+                                      'Xanh lá',
+                                      'Vàng',
+                                      'Cam',
+                                      'Xám',
+                                      'Nâu',
+                                      'Hồng',
+                                      'Tím',
+                                      'Khác',
+                                    ].contains(variant['colorName'])
+                                    ? variant['colorName']
+                                    : 'Đen',
+                                items:
+                                    [
+                                          'Đen',
+                                          'Trắng',
+                                          'Đỏ',
+                                          'Xanh dương',
+                                          'Xanh lá',
+                                          'Vàng',
+                                          'Cam',
+                                          'Xám',
+                                          'Nâu',
+                                          'Hồng',
+                                          'Tím',
+                                          'Khác',
+                                        ]
+                                        .map(
+                                          (c) => DropdownMenuItem(
+                                            value: c,
+                                            child: Text(c),
+                                          ),
+                                        )
+                                        .toList(),
+                                onChanged: (v) => setState(
+                                  () => _variants[index]['colorName'] = v,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -576,20 +845,34 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                               child: TextFormField(
                                 initialValue: variant['stockQty'].toString(),
                                 keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(labelText: 'SL', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 8)),
-                                onChanged: (v) => _variants[index]['stockQty'] = int.tryParse(v) ?? 0,
+                                decoration: const InputDecoration(
+                                  labelText: 'SL',
+                                  border: OutlineInputBorder(),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
+                                ),
+                                onChanged: (v) => _variants[index]['stockQty'] =
+                                    int.tryParse(v) ?? 0,
                               ),
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => setState(() => _variants.removeAt(index)),
-                            )
+                              onPressed: () =>
+                                  setState(() => _variants.removeAt(index)),
+                            ),
                           ],
                         ),
                       );
                     }),
                     TextButton.icon(
-                      onPressed: () => setState(() => _variants.add({'size': 'M', 'colorName': 'Đen', 'stockQty': 0})),
+                      onPressed: () => setState(
+                        () => _variants.add({
+                          'size': 'M',
+                          'colorName': 'Đen',
+                          'stockQty': 0,
+                        }),
+                      ),
                       icon: const Icon(Icons.add),
                       label: const Text('Thêm Size/Màu'),
                     ),
@@ -600,10 +883,19 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: SportZoneTheme.primary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         onPressed: _submitForm,
-                        child: const Text('LƯU SẢN PHẨM', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                        child: const Text(
+                          'LƯU SẢN PHẨM',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),

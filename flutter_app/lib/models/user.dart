@@ -48,11 +48,7 @@ class User {
 
   /// Ngưỡng bậc tiếp theo, null nếu đã Platinum
   int? get nextTierThreshold {
-    const thresholds = {
-      'bronze': 2000000,
-      'silver': 5000000,
-      'gold': 10000000,
-    };
+    const thresholds = {'bronze': 2000000, 'silver': 5000000, 'gold': 10000000};
     return thresholds[membershipTier];
   }
 
@@ -71,11 +67,7 @@ class User {
     final next = nextTierThreshold;
     if (next == null) return 1.0;
 
-    const currentThresholds = {
-      'bronze': 0,
-      'silver': 2000000,
-      'gold': 5000000,
-    };
+    const currentThresholds = {'bronze': 0, 'silver': 2000000, 'gold': 5000000};
     final current = currentThresholds[membershipTier] ?? 0;
     final range = next - current;
     if (range <= 0) return 1.0;

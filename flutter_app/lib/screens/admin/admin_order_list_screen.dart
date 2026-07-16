@@ -157,49 +157,51 @@ class _AdminOrderListScreenState extends State<AdminOrderListScreen> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _error.isNotEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(_error,
-                                  style: const TextStyle(color: Colors.red)),
-                              const SizedBox(height: 12),
-                              ElevatedButton(
-                                onPressed: _fetchOrders,
-                                child: const Text('Thử lại'),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _error,
+                            style: const TextStyle(color: Colors.red),
                           ),
-                        )
-                      : TabBarView(
-                          children: List.generate(5, (index) {
-                            final orders = _getOrdersByTab(index);
-                            return RefreshIndicator(
-                              onRefresh: _fetchOrders,
-                              child: orders.isEmpty
-                                  ? ListView(
-                                      children: const [
-                                        Padding(
-                                          padding: EdgeInsets.all(32),
-                                          child: Center(
-                                            child: Text('Không có đơn hàng nào.'),
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  : ListView.separated(
-                                      padding: const EdgeInsets.all(16),
-                                      itemCount: orders.length,
-                                      separatorBuilder: (_, __) =>
-                                          const SizedBox(height: 12),
-                                      itemBuilder: (_, i) => _AdminOrderCard(
-                                        order: orders[i],
-                                        onUpdated: _onStatusUpdated,
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: _fetchOrders,
+                            child: const Text('Thử lại'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : TabBarView(
+                      children: List.generate(5, (index) {
+                        final orders = _getOrdersByTab(index);
+                        return RefreshIndicator(
+                          onRefresh: _fetchOrders,
+                          child: orders.isEmpty
+                              ? ListView(
+                                  children: const [
+                                    Padding(
+                                      padding: EdgeInsets.all(32),
+                                      child: Center(
+                                        child: Text('Không có đơn hàng nào.'),
                                       ),
                                     ),
-                            );
-                          }),
-                        ),
+                                  ],
+                                )
+                              : ListView.separated(
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: orders.length,
+                                  separatorBuilder: (context, index) =>
+                                      const SizedBox(height: 12),
+                                  itemBuilder: (context, i) => _AdminOrderCard(
+                                    order: orders[i],
+                                    onUpdated: _onStatusUpdated,
+                                  ),
+                                ),
+                        );
+                      }),
+                    ),
             ),
           ],
         ),
@@ -238,15 +240,15 @@ class _AdminOrderCard extends StatelessWidget {
                     Text(
                       'Đơn #${_shortId(order.id)}',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w900,
-                          ),
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       _dateLabel(order.createdAt),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: SportZoneTheme.secondary,
-                          ),
+                        color: SportZoneTheme.secondary,
+                      ),
                     ),
                   ],
                 ),
@@ -271,11 +273,11 @@ class _AdminOrderCard extends StatelessWidget {
                       Text(
                         _statusLabel(order.status),
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: cancelled
-                                  ? SportZoneTheme.error
-                                  : SportZoneTheme.primary,
-                              fontWeight: FontWeight.w900,
-                            ),
+                          color: cancelled
+                              ? SportZoneTheme.error
+                              : SportZoneTheme.primary,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                       const SizedBox(width: 4),
                       Icon(
@@ -295,15 +297,18 @@ class _AdminOrderCard extends StatelessWidget {
           Text(
             'TÀI KHOẢN ĐẶT HÀNG',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: SportZoneTheme.secondary,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: SportZoneTheme.secondary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 6),
           Row(
             children: [
-              const Icon(Icons.person_outline,
-                  size: 16, color: SportZoneTheme.primary),
+              const Icon(
+                Icons.person_outline,
+                size: 16,
+                color: SportZoneTheme.primary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -317,8 +322,11 @@ class _AdminOrderCard extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.phone_outlined,
-                    size: 16, color: SportZoneTheme.secondary),
+                const Icon(
+                  Icons.phone_outlined,
+                  size: 16,
+                  color: SportZoneTheme.secondary,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -333,15 +341,18 @@ class _AdminOrderCard extends StatelessWidget {
           Text(
             'THÔNG TIN GIAO HÀNG',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: SportZoneTheme.secondary,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: SportZoneTheme.secondary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 6),
           Row(
             children: [
-              const Icon(Icons.assignment_ind_outlined,
-                  size: 16, color: SportZoneTheme.primary),
+              const Icon(
+                Icons.assignment_ind_outlined,
+                size: 16,
+                color: SportZoneTheme.primary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -355,8 +366,11 @@ class _AdminOrderCard extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.phone_outlined,
-                    size: 16, color: SportZoneTheme.secondary),
+                const Icon(
+                  Icons.phone_outlined,
+                  size: 16,
+                  color: SportZoneTheme.secondary,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -371,8 +385,11 @@ class _AdminOrderCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.location_on_outlined,
-                  size: 16, color: SportZoneTheme.secondary),
+              const Icon(
+                Icons.location_on_outlined,
+                size: 16,
+                color: SportZoneTheme.secondary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -389,15 +406,15 @@ class _AdminOrderCard extends StatelessWidget {
               Text(
                 'Tổng thanh toán:',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: SportZoneTheme.secondary,
-                    ),
+                  color: SportZoneTheme.secondary,
+                ),
               ),
               Text(
                 formatVnd(order.total),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      color: SportZoneTheme.primary,
-                    ),
+                  fontWeight: FontWeight.w900,
+                  color: SportZoneTheme.primary,
+                ),
               ),
             ],
           ),
@@ -424,7 +441,10 @@ class _AdminOrderCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 8,
+                        ),
                         child: Text(
                           'Cập nhật trạng thái',
                           style: TextStyle(
@@ -445,13 +465,15 @@ class _AdminOrderCard extends StatelessWidget {
                         label: 'Đã xác nhận (confirmed)',
                         value: 'confirmed',
                         current: order.status,
-                        onTap: () => _update(context, sheetContext, 'confirmed'),
+                        onTap: () =>
+                            _update(context, sheetContext, 'confirmed'),
                       ),
                       _StatusOption(
                         label: 'Đang chuẩn bị (processing)',
                         value: 'processing',
                         current: order.status,
-                        onTap: () => _update(context, sheetContext, 'processing'),
+                        onTap: () =>
+                            _update(context, sheetContext, 'processing'),
                       ),
                       _StatusOption(
                         label: 'Đang giao hàng (shipping)',
@@ -463,20 +485,23 @@ class _AdminOrderCard extends StatelessWidget {
                         label: 'Đã giao (delivered)',
                         value: 'delivered',
                         current: order.status,
-                        onTap: () => _update(context, sheetContext, 'delivered'),
+                        onTap: () =>
+                            _update(context, sheetContext, 'delivered'),
                       ),
                       _StatusOption(
                         label: 'Hoàn tất (completed)',
                         value: 'completed',
                         current: order.status,
-                        onTap: () => _update(context, sheetContext, 'completed'),
+                        onTap: () =>
+                            _update(context, sheetContext, 'completed'),
                       ),
                       _StatusOption(
                         label: 'Đã huỷ (cancelled)',
                         value: 'cancelled',
                         current: order.status,
                         isError: true,
-                        onTap: () => _update(context, sheetContext, 'cancelled'),
+                        onTap: () =>
+                            _update(context, sheetContext, 'cancelled'),
                       ),
                     ],
                   ),
@@ -490,7 +515,10 @@ class _AdminOrderCard extends StatelessWidget {
   }
 
   Future<void> _update(
-      BuildContext context, BuildContext sheetContext, String newStatus) async {
+    BuildContext context,
+    BuildContext sheetContext,
+    String newStatus,
+  ) async {
     Navigator.pop(sheetContext);
     if (newStatus == order.status) return;
 
@@ -507,9 +535,9 @@ class _AdminOrderCard extends StatelessWidget {
     if (res.isSuccess) {
       onUpdated(order.id, newStatus);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cập nhật thành công!')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Cập nhật thành công!')));
       }
     } else {
       if (context.mounted) {
@@ -572,7 +600,9 @@ class _StatusOption extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        color: isSelected ? SportZoneTheme.electricLime.withValues(alpha: 0.2) : null,
+        color: isSelected
+            ? SportZoneTheme.electricLime.withValues(alpha: 0.2)
+            : null,
         child: Row(
           children: [
             Expanded(
@@ -582,7 +612,9 @@ class _StatusOption extends StatelessWidget {
                   fontSize: 16,
                   color: isError
                       ? SportZoneTheme.error
-                      : (isSelected ? SportZoneTheme.primary : SportZoneTheme.secondary),
+                      : (isSelected
+                            ? SportZoneTheme.primary
+                            : SportZoneTheme.secondary),
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
               ),

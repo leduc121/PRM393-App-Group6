@@ -1,8 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_app/core.dart';
-
-
 class Product {
   final String id;
   final String brand;
@@ -97,14 +92,17 @@ class Product {
       imageUrl: firstImage,
       category: catName,
       description: json['description']?.toString() ?? '',
-      shortDescription: json['shortDescription']?.toString() ?? json['short_description']?.toString(),
+      shortDescription:
+          json['shortDescription']?.toString() ??
+          json['short_description']?.toString(),
       brandId: json['brandId']?.toString(),
       categoryId: json['categoryId']?.toString(),
       images: imagesList,
       material: json['material']?.toString(),
       gender: json['gender']?.toString(),
       origin: json['origin']?.toString(),
-      warrantyInfo: json['warrantyInfo']?.toString() ?? json['warranty_info']?.toString(),
+      warrantyInfo:
+          json['warrantyInfo']?.toString() ?? json['warranty_info']?.toString(),
       totalStock: (json['totalStock'] as num?)?.toInt() ?? 0,
     );
   }

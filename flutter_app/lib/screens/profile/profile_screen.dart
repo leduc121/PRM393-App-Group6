@@ -206,10 +206,14 @@ class _MembershipCard extends StatelessWidget {
 
   Color _getTierColor() {
     switch (user.membershipTier) {
-      case 'silver': return const Color(0xFFC0C0C0);
-      case 'gold': return const Color(0xFFFFD700);
-      case 'platinum': return const Color(0xFFE5E4E2);
-      default: return const Color(0xFFCD7F32); // Bronze
+      case 'silver':
+        return const Color(0xFFC0C0C0);
+      case 'gold':
+        return const Color(0xFFFFD700);
+      case 'platinum':
+        return const Color(0xFFE5E4E2);
+      default:
+        return const Color(0xFFCD7F32); // Bronze
     }
   }
 
@@ -223,15 +227,12 @@ class _MembershipCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            color.withOpacity(0.2),
-            color.withOpacity(0.05),
-          ],
+          colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.05)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,7 +247,10 @@ class _MembershipCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: color,
                   borderRadius: BorderRadius.circular(12),
@@ -290,9 +294,12 @@ class _MembershipCard extends StatelessWidget {
             const SizedBox(height: 12),
             const Text(
               'Bạn đã đạt bậc cao nhất! 💎',
-              style: TextStyle(fontWeight: FontWeight.w700, color: SportZoneTheme.secondary),
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: SportZoneTheme.secondary,
+              ),
             ),
-          ]
+          ],
         ],
       ),
     );
@@ -329,9 +336,9 @@ class _VouchersSectionState extends State<_VouchersSection> {
           children: [
             Text(
               'Voucher của tôi',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -341,7 +348,10 @@ class _VouchersSectionState extends State<_VouchersSection> {
               ),
               child: Text(
                 '${vouchers.length}',
-                style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.black),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black,
+                ),
               ),
             ),
           ],
@@ -352,7 +362,7 @@ class _VouchersSectionState extends State<_VouchersSection> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: vouchers.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final voucher = vouchers[index];
               final isUsed = voucher.isUsed;
@@ -360,14 +370,24 @@ class _VouchersSectionState extends State<_VouchersSection> {
                 width: 240,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isUsed ? SportZoneTheme.surfaceVariant : SportZoneTheme.surface,
+                  color: isUsed
+                      ? SportZoneTheme.surfaceVariant
+                      : SportZoneTheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isUsed ? SportZoneTheme.borderSubtle : SportZoneTheme.primary.withOpacity(0.1),
+                    color: isUsed
+                        ? SportZoneTheme.borderSubtle
+                        : SportZoneTheme.primary.withValues(alpha: 0.1),
                   ),
-                  boxShadow: isUsed ? null : const [
-                    BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 4)),
-                  ],
+                  boxShadow: isUsed
+                      ? null
+                      : const [
+                          BoxShadow(
+                            color: Color(0x0A000000),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,12 +399,23 @@ class _VouchersSectionState extends State<_VouchersSection> {
                           voucher.code,
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
-                            color: isUsed ? SportZoneTheme.secondary : SportZoneTheme.primary,
-                            decoration: isUsed ? TextDecoration.lineThrough : null,
+                            color: isUsed
+                                ? SportZoneTheme.secondary
+                                : SportZoneTheme.primary,
+                            decoration: isUsed
+                                ? TextDecoration.lineThrough
+                                : null,
                           ),
                         ),
                         if (isUsed)
-                          const Text('ĐÃ DÙNG', style: TextStyle(fontSize: 10, color: SportZoneTheme.error, fontWeight: FontWeight.bold)),
+                          const Text(
+                            'ĐÃ DÙNG',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: SportZoneTheme.error,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -393,13 +424,17 @@ class _VouchersSectionState extends State<_VouchersSection> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
-                        color: isUsed ? SportZoneTheme.secondary : const Color(0xFF00C853),
+                        color: isUsed
+                            ? SportZoneTheme.secondary
+                            : const Color(0xFF00C853),
                       ),
                     ),
                     const Spacer(),
                     Text(
                       'Đơn tối thiểu: ${formatVnd(voucher.minOrderValue)}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: SportZoneTheme.secondary),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: SportZoneTheme.secondary,
+                      ),
                     ),
                   ],
                 ),

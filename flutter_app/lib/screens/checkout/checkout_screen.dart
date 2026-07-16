@@ -66,7 +66,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           );
           if (defaultAddr != null && mounted) {
             setState(() {
-              fullName.text = defaultAddr['recipientName']?.toString() ?? fullName.text;
+              fullName.text =
+                  defaultAddr['recipientName']?.toString() ?? fullName.text;
               phone.text = defaultAddr['phone']?.toString() ?? phone.text;
               address.text = defaultAddr['street']?.toString() ?? '';
             });
@@ -84,7 +85,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       0,
       (sum, item) => sum + item.price * item.quantity,
     );
-    final activeShippingFee = shippingFee ?? (state.cartItems.isEmpty ? 0 : 30000);
+    final activeShippingFee =
+        shippingFee ?? (state.cartItems.isEmpty ? 0 : 30000);
     final discount = selectedVoucher?.calculateDiscount(subtotal) ?? 0;
     final total = subtotal + activeShippingFee - discount;
     return Scaffold(
@@ -350,14 +352,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(color: SportZoneTheme.secondary),
                               ),
-                            ]
+                            ],
                           ],
                         ),
                       ),
                       if (selectedVoucher != null)
                         IconButton(
                           icon: const Icon(Icons.close, size: 20),
-                          onPressed: () => setState(() => selectedVoucher = null),
+                          onPressed: () =>
+                              setState(() => selectedVoucher = null),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                         )
@@ -751,7 +754,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     try {
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
       final point = LatLng(position.latitude, position.longitude);
 
@@ -772,7 +777,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (mounted) {
         if (features != null && features.isNotEmpty) {
           final feature = features.first;
-          final placeName = feature['properties']['full_address'] ??
+          final placeName =
+              feature['properties']['full_address'] ??
               feature['properties']['name'] ??
               '';
           setState(() {
@@ -1056,7 +1062,10 @@ class _CheckoutMapPickerScreenState extends State<_CheckoutMapPickerScreen> {
                   foregroundColor: SportZoneTheme.primary,
                   onPressed: () {
                     final currentZoom = _mapController.camera.zoom;
-                    _mapController.move(_mapController.camera.center, currentZoom + 1);
+                    _mapController.move(
+                      _mapController.camera.center,
+                      currentZoom + 1,
+                    );
                   },
                   child: const Icon(Icons.add),
                 ),
@@ -1067,7 +1076,10 @@ class _CheckoutMapPickerScreenState extends State<_CheckoutMapPickerScreen> {
                   foregroundColor: SportZoneTheme.primary,
                   onPressed: () {
                     final currentZoom = _mapController.camera.zoom;
-                    _mapController.move(_mapController.camera.center, currentZoom - 1);
+                    _mapController.move(
+                      _mapController.camera.center,
+                      currentZoom - 1,
+                    );
                   },
                   child: const Icon(Icons.remove),
                 ),
@@ -1244,43 +1256,67 @@ class _VoucherPickerSheetState extends State<_VoucherPickerSheet> {
               const SizedBox(height: 18),
               Text(
                 'Chọn Voucher',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 16),
               if (vouchers.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(32.0),
-                  child: Text('Bạn chưa có voucher nào.', textAlign: TextAlign.center),
+                  child: Text(
+                    'Bạn chưa có voucher nào.',
+                    textAlign: TextAlign.center,
+                  ),
                 )
               else
                 Flexible(
                   child: ListView.separated(
                     shrinkWrap: true,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     itemCount: vouchers.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final voucher = vouchers[index];
                       final isSelected = voucher.id == widget.currentVoucherId;
-                      final isEligible = widget.subtotal >= voucher.minOrderValue;
-                      
+                      final isEligible =
+                          widget.subtotal >= voucher.minOrderValue;
+
                       return InkWell(
-                        onTap: isEligible ? () => widget.onSelect(voucher) : null,
+                        onTap: isEligible
+                            ? () => widget.onSelect(voucher)
+                            : null,
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFFE8F5E9) : SportZoneTheme.surfaceVariant,
+                            color: isSelected
+                                ? const Color(0xFFE8F5E9)
+                                : SportZoneTheme.surfaceVariant,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isSelected ? const Color(0xFF00C853) : (isEligible ? SportZoneTheme.primary.withOpacity(0.1) : SportZoneTheme.borderSubtle),
+                              color: isSelected
+                                  ? const Color(0xFF00C853)
+                                  : (isEligible
+                                        ? SportZoneTheme.primary.withValues(
+                                            alpha: 0.1,
+                                          )
+                                        : SportZoneTheme.borderSubtle),
                               width: isSelected ? 2 : 1,
                             ),
-                            boxShadow: isEligible && !isSelected ? const [
-                              BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 4)),
-                            ] : null,
+                            boxShadow: isEligible && !isSelected
+                                ? const [
+                                    BoxShadow(
+                                      color: Color(0x0A000000),
+                                      blurRadius: 10,
+                                      offset: Offset(0, 4),
+                                    ),
+                                  ]
+                                : null,
                           ),
                           child: Opacity(
                             opacity: isEligible ? 1.0 : 0.5,
@@ -1288,7 +1324,8 @@ class _VoucherPickerSheetState extends State<_VoucherPickerSheet> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         voucher.code,
@@ -1309,20 +1346,34 @@ class _VoucherPickerSheetState extends State<_VoucherPickerSheet> {
                                       const SizedBox(height: 4),
                                       Text(
                                         'Đơn tối thiểu: ${formatVnd(voucher.minOrderValue)}',
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: SportZoneTheme.secondary),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: SportZoneTheme.secondary,
+                                            ),
                                       ),
                                       if (!isEligible) ...[
                                         const SizedBox(height: 4),
                                         Text(
                                           'Chưa đạt giá trị đơn tối thiểu',
-                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: SportZoneTheme.error, fontWeight: FontWeight.bold),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: SportZoneTheme.error,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                         ),
-                                      ]
+                                      ],
                                     ],
                                   ),
                                 ),
                                 if (isSelected)
-                                  const Icon(Icons.check_circle, color: Color(0xFF00C853)),
+                                  const Icon(
+                                    Icons.check_circle,
+                                    color: Color(0xFF00C853),
+                                  ),
                               ],
                             ),
                           ),
@@ -1341,7 +1392,9 @@ class _VoucherPickerSheetState extends State<_VoucherPickerSheet> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: SportZoneTheme.error,
                         side: const BorderSide(color: SportZoneTheme.error),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       child: const Text('BỎ CHỌN VOUCHER'),
                     ),

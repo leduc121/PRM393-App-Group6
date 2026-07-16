@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
-import 'admin_product_form_screen.dart';
 
 class AdminProductListScreen extends StatefulWidget {
   const AdminProductListScreen({super.key});
@@ -43,9 +42,9 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
     if (confirm != true) return;
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đang xóa...')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Đang xóa...')));
 
     final result = await ApiService.deleteProduct(product.id);
     if (!mounted) return;
@@ -69,17 +68,26 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
     return Scaffold(
       backgroundColor: SportZoneTheme.background,
       appBar: AppBar(
-        title: const Text('Quản lý Sản phẩm', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Quản lý Sản phẩm',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle, color: SportZoneTheme.primary, size: 28),
+            icon: const Icon(
+              Icons.add_circle,
+              color: SportZoneTheme.primary,
+              size: 28,
+            ),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const AdminProductFormScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const AdminProductFormScreen(),
+                ),
               );
             },
           ),
@@ -87,7 +95,9 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
         ],
       ),
       body: state.isLoadingProducts
-          ? const Center(child: CircularProgressIndicator(color: SportZoneTheme.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: SportZoneTheme.primary),
+            )
           : RefreshIndicator(
               onRefresh: () async {
                 await state.fetchProducts();
@@ -99,7 +109,9 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                   final product = state.apiProducts[index];
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.all(12),
                       leading: ClipRRect(
@@ -123,17 +135,30 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 4),
-                          if (product.shortDescription != null && product.shortDescription!.isNotEmpty) ...[
+                          if (product.shortDescription != null &&
+                              product.shortDescription!.isNotEmpty) ...[
                             Text(
                               product.shortDescription!,
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 2),
                           ],
-                          Text(formatVnd(product.price), style: const TextStyle(color: SportZoneTheme.primary, fontWeight: FontWeight.w600)),
-                          Text('Kho: ${product.totalStock} | Danh mục: ${product.category}', style: const TextStyle(fontSize: 12)),
+                          Text(
+                            formatVnd(product.price),
+                            style: const TextStyle(
+                              color: SportZoneTheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            'Kho: ${product.totalStock} | Danh mục: ${product.category}',
+                            style: const TextStyle(fontSize: 12),
+                          ),
                         ],
                       ),
                       trailing: Row(
@@ -144,7 +169,10 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                             onPressed: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => AdminProductFormScreen(product: product)),
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      AdminProductFormScreen(product: product),
+                                ),
                               );
                             },
                           ),

@@ -29,10 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
             left: 0,
             right: 0,
             height: h * 0.45,
-            child: Image.asset(
-              'assets/images/auth_bg.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/auth_bg.png', fit: BoxFit.cover),
           ),
           Positioned(
             top: h * 0.35,
@@ -124,7 +121,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 12),
                       Text(
                         error!,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: SportZoneTheme.error),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: SportZoneTheme.error,
+                        ),
                       ),
                     ],
                     const SizedBox(height: 24),
@@ -145,12 +144,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                 final password = passwordController.text;
                                 if (email.isEmpty || password.isEmpty) {
                                   setState(() {
-                                    error = 'Vui lòng điền đầy đủ email và mật khẩu!';
+                                    error =
+                                        'Vui lòng điền đầy đủ email và mật khẩu!';
                                   });
                                   return;
                                 }
                                 setState(() => _isLoading = true);
-                                final errMessage = await state.loginAsync(email, password);
+                                final errMessage = await state.loginAsync(
+                                  email,
+                                  password,
+                                );
                                 if (!mounted) return;
                                 setState(() => _isLoading = false);
                                 if (errMessage == null) {
@@ -158,7 +161,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                   state.fetchBrands();
                                   state.fetchProducts();
                                   if (!context.mounted) return;
-                                  Navigator.pushReplacementNamed(context, '/main');
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    '/main',
+                                  );
                                 } else {
                                   setState(() {
                                     error = errMessage;
@@ -171,15 +177,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                 height: 24,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : Text(
                                 'ĐĂNG NHẬP',
-                                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  color: SportZoneTheme.onPrimary,
-                                  fontWeight: FontWeight.w900,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(
+                                      color: SportZoneTheme.onPrimary,
+                                      fontWeight: FontWeight.w900,
+                                    ),
                               ),
                       ),
                     ),
@@ -187,7 +198,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Divider(color: SportZoneTheme.borderSubtle),
                     const SizedBox(height: 20),
                     GestureDetector(
-                      onTap: () => Navigator.pushReplacementNamed(context, '/register'),
+                      onTap: () =>
+                          Navigator.pushReplacementNamed(context, '/register'),
                       child: Text(
                         'Bạn chưa có tài khoản? Đăng ký ngay',
                         textAlign: TextAlign.center,

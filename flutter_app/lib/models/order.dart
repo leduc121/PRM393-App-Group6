@@ -7,7 +7,7 @@ class Order {
   final int discount;
   final int total;
   final DateTime? createdAt;
-  
+
   // For Admin View Detail
   final String? customerName;
   final String? customerPhone;
@@ -63,8 +63,9 @@ class Order {
       createdAt: DateTime.tryParse(
         (json['createdAt'] ?? json['created_at'] ?? '').toString(),
       ),
-      customerName: addressJson?['recipientName'] ?? userJson?['fullName'],
-      customerPhone: addressJson?['phone'] ?? userJson?['phone'],
+      customerName: (addressJson?['recipientName'] ?? userJson?['fullName'])
+          ?.toString(),
+      customerPhone: (addressJson?['phone'] ?? userJson?['phone'])?.toString(),
       userFullName: userJson?['fullName']?.toString(),
       userEmail: userJson?['email']?.toString(),
       userPhone: userJson?['phone']?.toString(),

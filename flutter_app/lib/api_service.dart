@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_app/config/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
@@ -7,7 +9,7 @@ import 'package:flutter/foundation.dart';
 class ApiService {
   // Use the deployed backend for both debug and release builds.
   static String get baseUrl {
-    return 'https://prm393-be.onrender.com/api/v1';
+    return AppConfig.apiBaseUrl;
   }
 
   static const String _tokenKey = 'jwt_access_token';
@@ -319,7 +321,11 @@ class ApiService {
 
   // ─── Admin Product Endpoints ───
 
-  static Future<ApiResult> uploadProductImage(String filePath, {List<int>? bytes, String? fileName}) async {
+  static Future<ApiResult> uploadProductImage(
+    String filePath, {
+    List<int>? bytes,
+    String? fileName,
+  }) async {
     try {
       final headers = await _authHeaders();
       var request = http.MultipartRequest(
@@ -330,11 +336,13 @@ class ApiService {
         request.headers['Authorization'] = headers['Authorization']!;
       }
       if (kIsWeb && bytes != null) {
-        request.files.add(http.MultipartFile.fromBytes(
-          'file',
-          bytes,
-          filename: fileName ?? 'upload.png',
-        ));
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'file',
+            bytes,
+            filename: fileName ?? 'upload.png',
+          ),
+        );
       } else {
         request.files.add(await http.MultipartFile.fromPath('file', filePath));
       }
@@ -561,7 +569,9 @@ class ApiService {
         'paymentMethod': paymentMethod,
       };
       if (note != null && note.isNotEmpty) body['note'] = note;
-      if (voucherId != null && voucherId.isNotEmpty) body['voucherId'] = voucherId;
+      if (voucherId != null && voucherId.isNotEmpty) {
+        body['voucherId'] = voucherId;
+      }
 
       final response = await http.post(
         Uri.parse('$baseUrl/orders'),
@@ -1112,7 +1122,10 @@ class ApiService {
     }
   }
 
-  static Future<ApiResult> updateVoucher(String id, Map<String, dynamic> data) async {
+  static Future<ApiResult> updateVoucher(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     try {
       final headers = await _authHeaders();
       final response = await http.patch(

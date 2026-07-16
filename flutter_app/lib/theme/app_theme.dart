@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_app/core.dart';
-
 
 class SportZoneTheme {
   static const primary = Color(0xFF000000);
@@ -48,4 +45,3 @@ class SportZoneTheme {
     ),
   );
 }
-

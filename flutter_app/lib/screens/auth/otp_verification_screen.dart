@@ -78,9 +78,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     setState(() => _isLoading = false);
     if (errMessage == null) {
       _startTimer();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã gửi lại mã OTP!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Đã gửi lại mã OTP!')));
     } else {
       setState(() => error = errMessage);
     }
@@ -93,7 +93,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     final defaultPinTheme = PinTheme(
       width: 48,
       height: 56,
-      textStyle: const TextStyle(fontSize: 24, color: Colors.black, fontWeight: FontWeight.bold),
+      textStyle: const TextStyle(
+        fontSize: 24,
+        color: Colors.black,
+        fontWeight: FontWeight.bold,
+      ),
       decoration: BoxDecoration(
         color: SportZoneTheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
@@ -115,17 +119,15 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             left: 0,
             right: 0,
             height: h * 0.45,
-            child: Image.asset(
-              'assets/images/auth_bg.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/auth_bg.png', fit: BoxFit.cover),
           ),
           Positioned(
             top: 40,
             left: 16,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+              onPressed: () =>
+                  Navigator.pushReplacementNamed(context, '/login'),
             ),
           ),
           Positioned(
@@ -146,7 +148,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(Icons.mark_email_read_outlined, size: 64, color: SportZoneTheme.primary),
+                    const Icon(
+                      Icons.mark_email_read_outlined,
+                      size: 64,
+                      color: SportZoneTheme.primary,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'XÁC THỰC OTP',
@@ -161,12 +167,16 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     Text(
                       'Mã xác thực gồm 6 số đã được gửi đến:',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: SportZoneTheme.secondary),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: SportZoneTheme.secondary,
+                      ),
                     ),
                     Text(
                       widget.email,
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 40),
                     Center(
@@ -186,7 +196,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       Text(
                         error!,
                         textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: SportZoneTheme.error),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: SportZoneTheme.error,
+                        ),
                       ),
                     ],
                     const SizedBox(height: 32),
@@ -205,14 +217,22 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                             ? const SizedBox(
                                 width: 24,
                                 height: 24,
-                                child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
                               )
                             : Text(
                                 'XÁC NHẬN',
-                                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  color: SportZoneTheme.onPrimary,
-                                  fontWeight: FontWeight.w900,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(
+                                      color: SportZoneTheme.onPrimary,
+                                      fontWeight: FontWeight.w900,
+                                    ),
                               ),
                       ),
                     ),
@@ -222,16 +242,22 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       children: [
                         Text(
                           'Chưa nhận được mã? ',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: SportZoneTheme.secondary),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: SportZoneTheme.secondary),
                         ),
                         GestureDetector(
-                          onTap: _secondsLeft == 0 && !_isLoading ? _resendOtp : null,
+                          onTap: _secondsLeft == 0 && !_isLoading
+                              ? _resendOtp
+                              : null,
                           child: Text(
                             _secondsLeft > 0 ? 'Gửi lại sau s' : 'Gửi lại ngay',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: _secondsLeft == 0 ? SportZoneTheme.primary : SportZoneTheme.secondary,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  color: _secondsLeft == 0
+                                      ? SportZoneTheme.primary
+                                      : SportZoneTheme.secondary,
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                         ),
                       ],

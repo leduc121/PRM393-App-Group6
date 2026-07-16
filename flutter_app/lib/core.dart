@@ -1,3 +1,4 @@
+export 'config/app_config.dart';
 export 'models/product.dart';
 export 'models/category.dart';
 export 'models/brand.dart';

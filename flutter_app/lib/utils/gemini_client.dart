@@ -1,11 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_app/core.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
-
 
 class GeminiClient {
   static const _modelName = 'gemini-3.5-flash';
@@ -111,4 +106,3 @@ class GeminiClient {
     return 'Chào bạn! SportZone gợi ý bạn chọn sản phẩm phù hợp với phong cách tập luyện và kích cỡ hiện tại của bạn. Bạn cần tư vấn sản phẩm nào?';
   }
 }
-

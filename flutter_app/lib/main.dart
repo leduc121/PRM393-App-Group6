@@ -10,7 +10,9 @@ void main() {
 }
 
 class SportZoneApp extends StatelessWidget {
-  const SportZoneApp({super.key});
+  final String initialRoute;
+
+  const SportZoneApp({super.key, this.initialRoute = '/splash'});
 
   @override
   Widget build(BuildContext context) {
@@ -20,12 +22,11 @@ class SportZoneApp extends StatelessWidget {
         title: 'SportZone',
         debugShowCheckedModeBanner: false,
         theme: SportZoneTheme.lightTheme,
-        initialRoute: '/splash',
+        initialRoute: initialRoute,
         routes: {
           '/splash': (_) => const SplashScreen(),
           '/login': (_) => const LoginScreen(),
           '/register': (_) => const RegisterScreen(),
-          '/otp_verification': (_) => const OtpVerificationScreen(email: ''),
           '/main': (_) => const MainScreen(),
           '/checkout': (_) => const CheckoutScreen(),
           '/order-status': (_) => const OrderStatusScreen(),
@@ -39,7 +40,7 @@ class SportZoneApp extends StatelessWidget {
             );
           }
           if (settings.name == '/otp_verification') {
-            final email = settings.arguments as String;
+            final email = settings.arguments?.toString() ?? '';
             return MaterialPageRoute(
               builder: (_) => OtpVerificationScreen(email: email),
             );

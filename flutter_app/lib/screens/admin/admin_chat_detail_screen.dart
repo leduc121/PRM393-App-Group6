@@ -51,9 +51,9 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
             .whereType<Map<String, dynamic>>()
             .map((json) => ChatMessage.fromJson(json, isCurrentUserAdmin: true))
             .toList();
-        
+
         final shouldScroll = _messages.length != newMessages.length;
-        
+
         setState(() {
           _messages = newMessages;
           _isLoading = false;
@@ -77,12 +77,10 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
     if (text.isEmpty) return;
 
     controller.clear();
-    
+
     // Add locally for instant UI
     setState(() {
-      _messages.add(
-        ChatMessage(message: text, isUser: true, isRead: false),
-      );
+      _messages.add(ChatMessage(message: text, isUser: true, isRead: false));
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -119,7 +117,10 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : ListView.builder(
                       controller: scrollController,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                       itemCount: _messages.length,
                       itemBuilder: (context, index) {
                         return _chatBubble(_messages[index]);
@@ -173,7 +174,7 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
 
   Widget _chatBubble(ChatMessage msg) {
     final alignEnd = msg.isUser;
-    
+
     String timeStr = '';
     if (msg.sentAt != null) {
       final d = msg.sentAt!.day.toString().padLeft(2, '0');
@@ -186,8 +187,9 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
-        crossAxisAlignment:
-            alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: alignEnd
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           if (!alignEnd)
             Padding(
@@ -199,7 +201,9 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
                     radius: 10,
                     backgroundColor: SportZoneTheme.electricLime,
                     child: Text(
-                      widget.customerName.isNotEmpty ? widget.customerName[0].toUpperCase() : 'U',
+                      widget.customerName.isNotEmpty
+                          ? widget.customerName[0].toUpperCase()
+                          : 'U',
                       style: const TextStyle(
                         color: SportZoneTheme.primary,
                         fontSize: 10,
@@ -211,21 +215,24 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
                   Text(
                     widget.customerName.toUpperCase(),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w900,
-                        ),
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ],
               ),
             ),
           Row(
-            mainAxisAlignment:
-                alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: alignEnd
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             children: [
               Flexible(
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: alignEnd ? Colors.black : SportZoneTheme.borderSubtle,
+                    color: alignEnd
+                        ? Colors.black
+                        : SportZoneTheme.borderSubtle,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
@@ -236,8 +243,8 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
                   child: Text(
                     msg.message,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: alignEnd ? Colors.white : SportZoneTheme.primary,
-                        ),
+                      color: alignEnd ? Colors.white : SportZoneTheme.primary,
+                    ),
                   ),
                 ),
               ),
@@ -253,16 +260,18 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
                     Text(
                       timeStr,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: SportZoneTheme.secondary,
-                            fontSize: 10,
-                          ),
+                        color: SportZoneTheme.secondary,
+                        fontSize: 10,
+                      ),
                     ),
                   if (alignEnd) ...[
                     if (timeStr.isNotEmpty) const SizedBox(width: 4),
                     Icon(
                       msg.isRead ? Icons.done_all : Icons.check,
                       size: 14,
-                      color: msg.isRead ? Colors.blue : SportZoneTheme.secondary,
+                      color: msg.isRead
+                          ? Colors.blue
+                          : SportZoneTheme.secondary,
                     ),
                   ],
                 ],

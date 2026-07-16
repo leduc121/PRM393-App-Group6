@@ -1,8 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_app/core.dart';
-
-
 class CartItem {
   final String id;
   final String productId;
@@ -30,8 +25,8 @@ class CartItem {
     final product = json['product'] as Map<String, dynamic>? ?? {};
     final variant = json['variant'] as Map<String, dynamic>? ?? {};
     final images = product['images'] as List<dynamic>? ?? [];
-    final imgUrl = images.isNotEmpty 
-        ? images.first.toString() 
+    final imgUrl = images.isNotEmpty
+        ? images.first.toString()
         : 'https://via.placeholder.com/300x300?text=No+Image';
 
     return CartItem(
@@ -58,4 +53,3 @@ class CartItem {
       color = '',
       variantId = '';
 }
-

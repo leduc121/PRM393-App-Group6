@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
 
-
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
 
@@ -44,9 +43,8 @@ class CartScreen extends StatelessWidget {
                     children: [
                       Text(
                         'GIỎ HÀNG',
-                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                        ),
+                        style: Theme.of(context).textTheme.headlineLarge
+                            ?.copyWith(fontWeight: FontWeight.w900),
                       ),
                       const SizedBox(height: 8),
                       Container(
@@ -330,4 +328,3 @@ class CartScreen extends StatelessWidget {
     );
   }
 }
-

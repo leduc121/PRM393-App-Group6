@@ -1,8 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_app/core.dart';
-
-
 class Brand {
   final String brandId;
   final String name;
@@ -25,4 +20,3 @@ class Brand {
     );
   }
 }
-

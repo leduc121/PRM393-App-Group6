@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:flutter_app/core.dart';
 import 'dart:async';
 
-
 class _ChatScreenState extends State<ChatScreen> {
   final controller = TextEditingController();
   final scrollController = ScrollController();
@@ -159,7 +158,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _chatBubble(ChatMessage msg) {
     final alignEnd = msg.isUser;
-    
+
     String timeStr = '';
     if (msg.sentAt != null) {
       final d = msg.sentAt!.day.toString().padLeft(2, '0');
@@ -172,8 +171,9 @@ class _ChatScreenState extends State<ChatScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
-        crossAxisAlignment:
-            alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: alignEnd
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           if (!alignEnd)
             Padding(
@@ -198,21 +198,24 @@ class _ChatScreenState extends State<ChatScreen> {
                   Text(
                     'SPORTZONE ADMIN',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w900,
-                        ),
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ],
               ),
             ),
           Row(
-            mainAxisAlignment:
-                alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: alignEnd
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             children: [
               Flexible(
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: alignEnd ? Colors.black : SportZoneTheme.borderSubtle,
+                    color: alignEnd
+                        ? Colors.black
+                        : SportZoneTheme.borderSubtle,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
@@ -223,8 +226,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: Text(
                     msg.message,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: alignEnd ? Colors.white : SportZoneTheme.primary,
-                        ),
+                      color: alignEnd ? Colors.white : SportZoneTheme.primary,
+                    ),
                   ),
                 ),
               ),
@@ -240,16 +243,18 @@ class _ChatScreenState extends State<ChatScreen> {
                     Text(
                       timeStr,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: SportZoneTheme.secondary,
-                            fontSize: 10,
-                          ),
+                        color: SportZoneTheme.secondary,
+                        fontSize: 10,
+                      ),
                     ),
                   if (alignEnd) ...[
                     if (timeStr.isNotEmpty) const SizedBox(width: 4),
                     Icon(
                       msg.isRead ? Icons.done_all : Icons.check,
                       size: 14,
-                      color: msg.isRead ? Colors.blue : SportZoneTheme.secondary,
+                      color: msg.isRead
+                          ? Colors.blue
+                          : SportZoneTheme.secondary,
                     ),
                   ],
                 ],
@@ -277,4 +282,3 @@ class ChatScreen extends StatefulWidget {
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
-

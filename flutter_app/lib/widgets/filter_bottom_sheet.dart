@@ -115,176 +115,180 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           maxHeight: MediaQuery.of(context).size.height * 0.9,
         ),
         child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Bộ lọc tìm kiếm',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: SportZoneTheme.primary,
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Bộ lọc tìm kiếm',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: SportZoneTheme.primary,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
                 ),
-              ),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close),
-              )
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Danh mục',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildCategoryChip('Tất cả', null),
-              ...context.read<SportZoneState>().apiCategories.map((c) => _buildCategoryChip(c.name, c.categoryId)),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Thương hiệu',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildBrandChip('Tất cả', null),
-              ...context.read<SportZoneState>().apiBrands.map((b) => _buildBrandChip(b.name, b.brandId)),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Giới tính',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _buildGenderChip('Tất cả', null),
-              const SizedBox(width: 8),
-              _buildGenderChip('Nam', 'men'),
-              const SizedBox(width: 8),
-              _buildGenderChip('Nữ', 'women'),
-              const SizedBox(width: 8),
-              _buildGenderChip('Unisex', 'unisex'),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Size',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            children: [
-              _buildSizeChip('Tất cả', null),
-              _buildSizeChip('XS', 'XS'),
-              _buildSizeChip('S', 'S'),
-              _buildSizeChip('M', 'M'),
-              _buildSizeChip('L', 'L'),
-              _buildSizeChip('XL', 'XL'),
-              _buildSizeChip('XXL', 'XXL'),
-              _buildSizeChip('FREE', 'FREE'),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Khoảng giá (VND)',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: SportZoneTheme.surface,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                isExpanded: true,
-                value: _priceRange,
-                items: _priceRanges.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) _applyPriceRange(val);
-                },
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: SportZoneTheme.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                const SizedBox(height: 24),
+                Text(
+                  'Danh mục',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              onPressed: () {
-                context.read<SportZoneState>().applyFilters(
-                  minPrice: _minPrice,
-                  maxPrice: _maxPrice,
-                  gender: _gender,
-                  size: _size,
-                  categoryName: _categoryName,
-                  categoryId: _categoryId,
-                  brandName: _brandName,
-                  brandId: _brandId,
-                );
-                Navigator.pop(context);
-              },
-              child: const Text(
-                'ÁP DỤNG',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildCategoryChip('Tất cả', null),
+                    ...context.read<SportZoneState>().apiCategories.map(
+                      (c) => _buildCategoryChip(c.name, c.categoryId),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ), // Column
-     ), // SingleChildScrollView
-    ), // Container
-   ), // ConstrainedBox
-  ); // SafeArea
-}
+                const SizedBox(height: 24),
+                Text(
+                  'Thương hiệu',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildBrandChip('Tất cả', null),
+                    ...context.read<SportZoneState>().apiBrands.map(
+                      (b) => _buildBrandChip(b.name, b.brandId),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Giới tính',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    _buildGenderChip('Tất cả', null),
+                    const SizedBox(width: 8),
+                    _buildGenderChip('Nam', 'men'),
+                    const SizedBox(width: 8),
+                    _buildGenderChip('Nữ', 'women'),
+                    const SizedBox(width: 8),
+                    _buildGenderChip('Unisex', 'unisex'),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Size',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    _buildSizeChip('Tất cả', null),
+                    _buildSizeChip('XS', 'XS'),
+                    _buildSizeChip('S', 'S'),
+                    _buildSizeChip('M', 'M'),
+                    _buildSizeChip('L', 'L'),
+                    _buildSizeChip('XL', 'XL'),
+                    _buildSizeChip('XXL', 'XXL'),
+                    _buildSizeChip('FREE', 'FREE'),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Khoảng giá (VND)',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: SportZoneTheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: _priceRange,
+                      items: _priceRanges.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) _applyPriceRange(val);
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: SportZoneTheme.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: () {
+                      context.read<SportZoneState>().applyFilters(
+                        minPrice: _minPrice,
+                        maxPrice: _maxPrice,
+                        gender: _gender,
+                        size: _size,
+                        categoryName: _categoryName,
+                        categoryId: _categoryId,
+                        brandName: _brandName,
+                        brandId: _brandId,
+                      );
+                      Navigator.pop(context);
+                    },
+                    child: const Text(
+                      'ÁP DỤNG',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ), // Column
+          ), // SingleChildScrollView
+        ), // Container
+      ), // ConstrainedBox
+    ); // SafeArea
+  }
 
   Widget _buildGenderChip(String label, String? value) {
     final isSelected = _gender == value;
